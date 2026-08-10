@@ -23,7 +23,10 @@ const di = args.indexOf('--days');
 const DAYS = di > -1 ? parseInt(args[di + 1], 10) : null;
 
 const CFG = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-const SPILL = CFG.spillDir.replace(/\\/g, '/').replace(/\/?$/, '/');
+// Relative config paths resolve against the config file, not the cwd.
+const CFGDIR = path.dirname(path.resolve(cfgPath));
+const SPILL = path.resolve(CFGDIR, CFG.spillDir.replace(/\\/g, '/'))
+  .replace(/\\/g, '/').replace(/\/?$/, '/');
 const WINDOW = DAYS || CFG.days || 30;
 const BASE = process.env.DATADIVE_BASE_URL || 'https://api.datadive.tools';
 

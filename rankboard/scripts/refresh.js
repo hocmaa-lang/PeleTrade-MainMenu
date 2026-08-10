@@ -25,6 +25,9 @@ const di = args.indexOf('--days');
 const DAYS = di > -1 ? args[di + 1] : null;
 
 const CFG = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+// Relative config paths resolve against the config file, not the cwd.
+const CFGDIR = path.dirname(path.resolve(cfgPath));
+const abs = p => path.resolve(CFGDIR, String(p).replace(/\\/g, '/')).replace(/\\/g, '/').replace(/\/$/, '');
 const node = process.execPath;
 const step = m => console.log('\n• ' + m);
 const sh = (cmd, cmdArgs, opts = {}) =>
@@ -42,7 +45,8 @@ for (const p of CFG.products) {
 }
 const seal = CFG.seal || {};
 if (WANT_PUSH && !seal.siteDir) problems.push('--push needs seal.siteDir pointing at a git checkout');
-if (WANT_PUSH && !fs.existsSync(seal.siteDir || '')) problems.push(`seal.siteDir does not exist: ${seal.siteDir}`);
+if (WANT_PUSH && seal.siteDir && !fs.existsSync(abs(seal.siteDir)))
+  problems.push(`seal.siteDir does not exist: ${abs(seal.siteDir)}`);
 if (problems.length) {
   console.error('Config problems:\n  - ' + problems.join('\n  - '));
   process.exit(1);
@@ -65,13 +69,13 @@ if (!WANT_PUSH) {
 }
 
 step('Publishing');
-const SITE = seal.siteDir.replace(/\\/g, '/').replace(/\/$/, '');
+const SITE = abs(seal.siteDir);
 const git = a => sh('git', ['-C', SITE, ...a]).toString();
 
 // Sealing uses a fresh random salt+IV every run, so the sealed bytes differ even
 // when the data is identical. Diffing the ciphertext would therefore commit every
 // single run. Diff the PLAINTEXT payload instead — that is what actually changed.
-const payload = CFG.out.replace(/\\/g, '/').replace(/\/$/, '') + '/payload.json';
+const payload = abs(CFG.out) + '/payload.json';
 const stampFile = SITE + '/.rankboard-payload-sha';
 const crypto = require('crypto');
 const sha = crypto.createHash('sha256').update(fs.readFileSync(payload)).digest('hex');

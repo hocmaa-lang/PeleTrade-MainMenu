@@ -8,7 +8,12 @@ const fs = require('fs');
 const path = require('path');
 if (!process.argv[2]) { console.error('usage: node build.js <config.json>'); process.exit(1); }
 const CFG = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-const T = CFG.spillDir.replace(/\\/g, '/').replace(/\/?$/, '/');
+// Config paths resolve against the config file's own directory, so a config can be
+// relative and still work from any cwd (CI checks out to a different root).
+const CFGDIR = path.dirname(path.resolve(process.argv[2]));
+const abs = p => path.resolve(CFGDIR, String(p).replace(/\\/g, '/')).replace(/\\/g, '/');
+const T = abs(CFG.spillDir).replace(/\/?$/, '/');
+CFG.out = abs(CFG.out);
 if (!fs.existsSync(CFG.out)) fs.mkdirSync(CFG.out, { recursive: true });
 for (const p of CFG.products) {
   if (!fs.existsSync(T + p.file))

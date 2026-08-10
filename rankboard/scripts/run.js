@@ -15,7 +15,13 @@ const WANT_SEAL = args.includes('--seal');
 const WANT_OPEN = args.includes('--open');
 
 const CFG = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
-const OUT = CFG.out.replace(/\\/g, '/').replace(/\/$/, '');
+// Resolve config paths against the CONFIG's own directory, so a config may use
+// relative paths and still work from any cwd. This is not cosmetic: a relative
+// `out` produced "file://./..." below, which Chrome resolves to nothing and
+// renders as a blank page — the render check then fails on a perfectly good build.
+const CFGDIR = path.dirname(path.resolve(cfgPath));
+const abs = p => path.resolve(CFGDIR, String(p).replace(/\\/g, '/')).replace(/\\/g, '/').replace(/\/$/, '');
+const OUT = abs(CFG.out);
 const node = process.execPath;
 const run = (script, ...rest) =>
   execFileSync(node, [path.join(HERE, script), ...rest], { encoding: 'utf8' });
@@ -53,8 +59,11 @@ if (!CHROME) {
   step('Verifying the pages actually render');
   for (const [file, needle] of Object.entries(CHECKS)) {
     // --no-sandbox is required on CI runners and harmless locally.
+    // pathToFileURL, not string concatenation: "file:///" + an absolute POSIX path
+    // yields file:////home/... on Linux, which is not the same file.
+    const fileUrl = require('url').pathToFileURL(OUT + '/' + file).href;
     const dom = execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--no-sandbox', '--virtual-time-budget=5000',
-      '--user-data-dir=' + OUT + '/.chrome-verify', '--dump-dom', 'file:///' + OUT + '/' + file],
+      '--user-data-dir=' + OUT + '/.chrome-verify', '--dump-dom', fileUrl],
       { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
     // --dump-dom serialises <script> contents too, so a plain search matches the
     // string literal in the source and passes on a totally broken page. Strip the
@@ -110,9 +119,7 @@ if (WANT_SEAL) {
       ? ' \u2014 keyword rank by day' : ' \u2014 organic rank');
     // Without a siteDir the sealed copy would overwrite the plain page it was made
     // from — prefix it instead, so the readable original survives for the next edit.
-    const dest = seal.siteDir
-      ? seal.siteDir.replace(/\\/g, '/').replace(/\/$/, '') + '/' + out
-      : OUT + '/sealed_' + out;
+    const dest = seal.siteDir ? abs(seal.siteDir) + '/' + out : OUT + '/sealed_' + out;
     process.stdout.write(run('seal.js', OUT + '/' + file, dest, title, user, pass, CFG.brandTitle || CFG.brand));
   }
   console.log('\n  CREDENTIALS — send the link and the password on separate channels');
