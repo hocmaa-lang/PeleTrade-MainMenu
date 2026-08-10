@@ -13,11 +13,16 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: write     # commit the resealed pages
+  pages: write        # deploy them
+  id-token: write     # required by deploy-pages
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,3 +42,19 @@ jobs:
           DATADIVE_API_KEY: ${{ secrets.DATADIVE_API_KEY }}
           RANKBOARD_PELETRADE_PASS: ${{ secrets.RANKBOARD_PELETRADE_PASS }}
         run: node rankboard/scripts/refresh.js rankboard/config.ci.json --push
+
+      # Publish ONLY the two sealed pages. The build scripts and the config live in
+      # the repo but have no business being served from the client's site.
+      - name: Stage the site
+        run: |
+          mkdir -p _site
+          cp index.html keywords.html _site/
+          touch _site/.nojekyll
+          ls -la _site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
