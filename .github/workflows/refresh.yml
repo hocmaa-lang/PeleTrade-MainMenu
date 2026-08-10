@@ -1,0 +1,39 @@
+name: Rankboard refresh
+
+# Rebuilds the client's organic-rank heatmap from Data Dive and republishes it
+# behind the SAME URL and the SAME password. Runs in the cloud, so it does not
+# depend on anyone's laptop being awake.
+on:
+  schedule:
+    - cron: '30 5 * * *'      # 05:30 UTC = 08:30 Israel, after the day's crawl lands
+  workflow_dispatch:           # and on demand from the Actions tab
+
+concurrency:
+  group: rankboard-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # run.js only WARNS when Chrome is absent and skips the render check. On an
+      # unattended run that would let a blank page reach the client, so assert it.
+      - name: Assert Chrome is available for the render check
+        run: |
+          test -x /usr/bin/google-chrome || { echo "Chrome missing — refusing to publish unverified"; exit 1; }
+          /usr/bin/google-chrome --version
+
+      - name: Refresh, verify and publish
+        env:
+          DATADIVE_API_KEY: ${{ secrets.DATADIVE_API_KEY }}
+          RANKBOARD_PELETRADE_PASS: ${{ secrets.RANKBOARD_PELETRADE_PASS }}
+        run: node rankboard/scripts/refresh.js rankboard/config.ci.json --push

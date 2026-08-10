@@ -1,0 +1,88 @@
+{
+  "brand": "peletrade",
+  "brandTitle": "PELETRADE",
+  "teamName": "PeleTrade",
+  "marketplace": "Amazon US",
+  "days": 30,
+  "spillDir": "./.rankboard/spill",
+  "out": "./.rankboard/build",
+  "seal": {
+    "user": "peletrade",
+    "siteDir": ".",
+    "publicUrl": "https://hocmaa-lang.github.io/peletrade-reports/",
+    "gitEmail": "github-actions[bot]@users.noreply.github.com",
+    "gitName": "github-actions[bot]",
+    "publish": [
+      {
+        "src": "keywords.html",
+        "as": "index.html",
+        "passEnv": "RANKBOARD_PELETRADE_PASS",
+        "title": "PELETRADE — keyword rank by day"
+      },
+      {
+        "src": "keywords.html",
+        "as": "keywords.html",
+        "passEnv": "RANKBOARD_PELETRADE_PASS",
+        "title": "PELETRADE — keyword rank by day"
+      }
+    ]
+  },
+  "products": [
+    {
+      "key": "lav_kcup",
+      "radarId": "78c84c61-a350-4608-a4f9-2ecc3cf08c1a",
+      "asin": "B08TRVVCTB",
+      "name": "Lavazza K-Cup Variety Bundle — 40 Count, 4 Flavors",
+      "short": "Lavazza K-Cup 40ct",
+      "file": "lav_kcup.json"
+    },
+    {
+      "key": "lav_intenso",
+      "radarId": "585590bc-93f8-4e21-8683-6bd3842f3f13",
+      "asin": "B0DPXM5YK7",
+      "name": "Lavazza Expert Espresso Intenso Capsules — 72 Count",
+      "short": "Lavazza Expert Intenso",
+      "file": "lav_intenso.json"
+    },
+    {
+      "key": "lav_blue",
+      "radarId": "d38cbea7-a550-4158-93ce-447ce7b63fdd",
+      "asin": "B09MJGWDXD",
+      "name": "Lavazza Blue Capsules Variety Pack — 100 Count",
+      "short": "Lavazza Blue 100ct",
+      "file": "lav_blue.json"
+    },
+    {
+      "key": "senseo",
+      "radarId": "8a7097e5-f4b3-49f6-b9bc-3cc5e1ea8044",
+      "asin": "B00WEKKQ8A",
+      "name": "Senseo Classic Medium Roast Pods — 144 Count",
+      "short": "Senseo Classic 144ct",
+      "file": "senseo.json"
+    },
+    {
+      "key": "pelecom",
+      "radarId": "6f3c2c45-abdd-4f00-bf40-751273f330c0",
+      "asin": "B0DD4CWPW2",
+      "name": "Pelecom Coffee Machine — Senseo-Pod Compatible",
+      "short": "Pelecom Machine",
+      "file": "pelecom.json"
+    },
+    {
+      "key": "ml_sampler",
+      "radarId": "42ddf761-fdf0-434d-b15d-b261bac565b0",
+      "asin": "B0DNG4NZGN",
+      "name": "Mighty Leaf Organic Tea Sampler — 40 Count, 8 Flavors",
+      "short": "Mighty Leaf Sampler 40ct",
+      "file": "ml_sampler.json"
+    },
+    {
+      "key": "ml_tropical",
+      "radarId": "e280a8df-c526-4f2e-beff-e317ed1d677c",
+      "asin": "B000MUJPCC",
+      "name": "Mighty Leaf Green Tea Tropical — 100 Count Pouches",
+      "short": "Mighty Leaf Tropical",
+      "file": "ml_tropical.json"
+    }
+  ]
+}
