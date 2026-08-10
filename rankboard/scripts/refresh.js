@@ -82,7 +82,15 @@ const sha = crypto.createHash('sha256').update(fs.readFileSync(payload)).digest(
 const prev = fs.existsSync(stampFile) ? fs.readFileSync(stampFile, 'utf8').trim() : '';
 
 if (sha === prev) {
+  // Sealing already rewrote the pages with a new salt+IV even though the data is
+  // the same. Throw that away and restore the committed bytes, so whatever a
+  // deploy step uploads is exactly what the repo holds — otherwise the site and
+  // the repo drift apart every quiet day and neither is obviously wrong.
+  const published = (seal.publish || [{ as: 'organic.html' }, { as: 'keywords.html' }])
+    .map(i => i.as || i.src);
+  try { git(['checkout', '--', ...published]); } catch { /* first run: nothing committed yet */ }
   console.log('  Data is byte-identical to the last publish — nothing to push.');
+  console.log('  Restored the committed pages so the site matches the repo.');
   console.log('  (The tracker had no new crawl. This is normal, not an error.)');
   process.exit(0);
 }
