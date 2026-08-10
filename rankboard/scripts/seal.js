@@ -71,12 +71,21 @@ document.getElementById('f').addEventListener('submit',async ev=>{
       base,{name:'AES-GCM',length:256},false,['decrypt']);
     const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv:b2a(IV)},key,b2a(DATA));
     const html=new TextDecoder().decode(clear);
-    // Hand the decrypted document its own real navigation. document.write() from
-    // an async callback renders the markup but does not reliably run the page's
-    // own <script> — which silently breaks any interactive document. A blob URL
-    // gets a clean parse, same origin, and nothing leaves the browser.
-    const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
-    location.replace(url);
+    // Hand the decrypted document to a full-page iframe via srcdoc. It gets a
+    // clean parse, runs its own <script>, and nothing leaves the browser.
+    //
+    // This used to be location.replace() onto a blob: URL. Current Chrome no
+    // longer performs that top-level navigation, and it fails SILENTLY: the
+    // decrypt succeeds, the navigation is dropped, and the gate sits on
+    // "Decrypting…" for ever with no error. srcdoc needs no navigation at all,
+    // and avoids the same class of blob restriction on Safari/iOS.
+    document.body.innerHTML='';
+    document.body.style.cssText='margin:0;padding:0;overflow:hidden;display:block';
+    const f=document.createElement('iframe');
+    f.setAttribute('title',document.title);
+    f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0';
+    f.srcdoc=html;
+    document.body.appendChild(f);
   }catch(_){
     err.textContent='Wrong username or password.';
     btn.disabled=false;
