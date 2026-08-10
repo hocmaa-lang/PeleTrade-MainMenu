@@ -112,11 +112,15 @@ iframe[hidden]{display:none}
 
   // An inline tab carries the whole document with it. Decode once, on first view,
   // so opening the hub does not pay for every tab.
-  function srcFor(t){
-    if (t.kind === 'url') return t.url;
+  //
+  // srcdoc, not a blob URL: the hub itself is already rendered inside a srcdoc
+  // frame by the seal loader, and blob URLs are the thing that broke there. Using
+  // srcdoc throughout means the whole chain needs no navigation and no blob.
+  function fill(f, t){
+    if (t.kind === 'url') { f.src = t.url; return; }
     var bin = atob(t.b64), n = bin.length, buf = new Uint8Array(n);
     for (var i = 0; i < n; i++) buf[i] = bin.charCodeAt(i);
-    return URL.createObjectURL(new Blob([buf], {type:'text/html'}));
+    f.srcdoc = new TextDecoder('utf-8').decode(buf);
   }
 
   function show(id){
@@ -127,7 +131,7 @@ iframe[hidden]{display:none}
         var f = document.createElement('iframe');
         f.id = 'if-' + t.id;
         f.setAttribute('title', t.label);
-        f.src = srcFor(t);
+        fill(f, t);
         main.appendChild(f);
         frames[t.id] = f;
       }
