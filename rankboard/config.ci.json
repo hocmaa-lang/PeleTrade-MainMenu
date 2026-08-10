@@ -26,7 +26,7 @@
   "seal": {
     "user": "peletrade",
     "siteDir": "..",
-    "publicUrl": "https://hocmaa-lang.github.io/peletrade-reports/",
+    "publicUrl": "https://hocmaa-lang.github.io/PeleTrade-MainMenu/",
     "gitEmail": "github-actions[bot]@users.noreply.github.com",
     "gitName": "github-actions[bot]",
     "publish": [
