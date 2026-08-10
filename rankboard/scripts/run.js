@@ -36,6 +36,8 @@ process.stdout.write(run('build.js', cfgPath));
 step('Building pages');
 process.stdout.write(run('page_summary.js', OUT));
 process.stdout.write(run('page_keywords.js', OUT));
+// The hub embeds the pages above, so it must be composed after them.
+if (CFG.hub) process.stdout.write(run('page_hub.js', OUT, path.resolve(cfgPath)));
 
 // -------------------------------------------------- 3. verify they rendered ---
 // The whole point: a page can be syntactically fine and still render blank because
@@ -52,6 +54,8 @@ const CHECKS = {
   'keywords.html': 'keywords ranking at least once',
   'dashboard.html': 'search vol in top 10',
 };
+// The hub's tab bar is built by script; "hub ready" only appears if that ran.
+if (CFG.hub) CHECKS['hub.html'] = 'hub ready';
 
 if (!CHROME) {
   console.log('\n\u26a0  Chrome not found — SKIPPED the render check. Open both files and look before sending.');

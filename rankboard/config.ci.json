@@ -6,6 +6,23 @@
   "days": 30,
   "spillDir": "../.rankboard/spill",
   "out": "../.rankboard/build",
+  "hub": {
+    "title": "PeleTrade — performance dashboards",
+    "tabs": [
+      {
+        "label": "Organic rank",
+        "sub": "Keyword positions, day by day",
+        "inline": "keywords.html",
+        "note": "<b>Rank only.</b> This view carries no sales or revenue — it is where the listings sit in Amazon's organic results. Crossed cells are days the tracker did not run, not days the product vanished."
+      },
+      {
+        "label": "Senseo sales",
+        "sub": "Daily sales by ASIN",
+        "url": "https://hocmaa-lang.github.io/senseo-dashboard/",
+        "note": "<b>Sales only.</b> Revenue and units per ASIN, net of Amazon commission and FBA fees — <b>not</b> profit, since COGS is not in the feed."
+      }
+    ]
+  },
   "seal": {
     "user": "peletrade",
     "siteDir": "..",
@@ -14,10 +31,10 @@
     "gitName": "github-actions[bot]",
     "publish": [
       {
-        "src": "keywords.html",
+        "src": "hub.html",
         "as": "index.html",
         "passEnv": "RANKBOARD_PELETRADE_PASS",
-        "title": "PELETRADE — keyword rank by day"
+        "title": "PELETRADE — performance dashboards"
       },
       {
         "src": "keywords.html",
