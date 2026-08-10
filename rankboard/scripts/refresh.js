@@ -21,6 +21,11 @@ const args = process.argv.slice(2);
 const cfgPath = args.find(a => !a.startsWith('--') && a.endsWith('.json'));
 if (!cfgPath) { console.error('usage: node refresh.js <config.json> [--push] [--days 30]'); process.exit(1); }
 const WANT_PUSH = args.includes('--push');
+// Publish even when the built pages are unchanged. Needed whenever something that
+// is NOT in the plaintext changes — rotating the seal password being the case that
+// matters: the pages are byte-identical, so the change-check would restore the old
+// sealed files and the new password would never reach the client.
+const WANT_FORCE = args.includes('--force');
 const di = args.indexOf('--days');
 const DAYS = di > -1 ? args[di + 1] : null;
 
@@ -90,7 +95,12 @@ for (const s of sources) h.update(s).update(fs.readFileSync(OUTDIR + '/' + s));
 const sha = h.digest('hex');
 const prev = fs.existsSync(stampFile) ? fs.readFileSync(stampFile, 'utf8').trim() : '';
 
-if (sha === prev) {
+if (sha === prev && WANT_FORCE) {
+  console.log('  Pages unchanged, but --force was given — publishing anyway.');
+  console.log('  (Use this after rotating the password: the plaintext is identical,');
+  console.log('   only the seal differs, so the normal check cannot see it.)');
+}
+if (sha === prev && !WANT_FORCE) {
   // Sealing already rewrote the pages with a new salt+IV even though the data is
   // the same. Throw that away and restore the committed bytes, so whatever a
   // deploy step uploads is exactly what the repo holds — otherwise the site and
