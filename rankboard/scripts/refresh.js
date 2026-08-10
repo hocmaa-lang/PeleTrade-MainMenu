@@ -74,11 +74,20 @@ const git = a => sh('git', ['-C', SITE, ...a]).toString();
 
 // Sealing uses a fresh random salt+IV every run, so the sealed bytes differ even
 // when the data is identical. Diffing the ciphertext would therefore commit every
-// single run. Diff the PLAINTEXT payload instead — that is what actually changed.
-const payload = abs(CFG.out) + '/payload.json';
+// single run. Diff the PLAINTEXT PAGES instead.
+//
+// Not payload.json: that is data only, so a change to the page template or to the
+// hub config looked like "no change" and the run helpfully restored the previous
+// pages — publishing the old layout over the new one. The built pages are the
+// thing being shipped, so they are the thing to compare.
+const OUTDIR = abs(CFG.out);
+const sources = [...new Set((seal.publish || [{ src: 'dashboard.html' }, { src: 'keywords.html' }])
+  .map(i => i.src))];
 const stampFile = SITE + '/.rankboard-payload-sha';
 const crypto = require('crypto');
-const sha = crypto.createHash('sha256').update(fs.readFileSync(payload)).digest('hex');
+const h = crypto.createHash('sha256');
+for (const s of sources) h.update(s).update(fs.readFileSync(OUTDIR + '/' + s));
+const sha = h.digest('hex');
 const prev = fs.existsSync(stampFile) ? fs.readFileSync(stampFile, 'utf8').trim() : '';
 
 if (sha === prev) {
