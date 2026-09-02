@@ -55,7 +55,7 @@ jobs:
       - name: Stage the site
         run: |
           mkdir -p _site
-          cp index.html keywords.html _site/
+          cp index.html keywords.html september-emails.html _site/
           touch _site/.nojekyll
           ls -la _site
 
