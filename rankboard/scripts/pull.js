@@ -51,9 +51,31 @@ function apiKey() {
 
 const iso = d => d.toISOString().slice(0, 10);
 
+// Since ~7 Sep 2026 the endpoint is paginated: { success, data: { currentPage,
+// lastPage, total, data: [...] } }, 20 keywords a page by default, 100 max. Reading
+// it as the old bare array saw 0 keywords and froze the board for three weeks.
+// Walk every page with `currentPage` (not `page` — that one is silently ignored).
 async function getRadar(id, key, startDate, endDate) {
+  const out = [];
+  for (let page = 1; page <= 200; page++) {
+    const body = await getPage(id, key, startDate, endDate, page);
+    if (Array.isArray(body)) return body;                     // old shape
+    const d = body && body.data;
+    if (Array.isArray(d)) return d;                           // old { data: [...] }
+    if (!d || !Array.isArray(d.data)) return out;
+    out.push(...d.data);
+    if (!d.hasNext || page >= (d.lastPage || 1)) {
+      if (d.total != null && out.length !== d.total)
+        throw new Error(`radar ${id}: paged ${out.length} keywords, API says total ${d.total}`);
+      return out;
+    }
+  }
+  throw new Error(`radar ${id}: more than 200 pages`);
+}
+
+async function getPage(id, key, startDate, endDate, page) {
   const u = `${BASE}/v1/niches/rank-radars/${encodeURIComponent(id)}` +
-            `?startDate=${startDate}&endDate=${endDate}`;
+            `?startDate=${startDate}&endDate=${endDate}&pageSize=100&currentPage=${page}`;
   for (let attempt = 1; attempt <= 4; attempt++) {
     let res;
     try {
@@ -69,8 +91,7 @@ async function getRadar(id, key, startDate, endDate) {
       continue;
     }
     if (!res.ok) throw new Error(`Data Dive returned ${res.status} for radar ${id}: ${await res.text()}`);
-    const body = await res.json();
-    return Array.isArray(body) ? body : (body && body.data) || [];
+    return res.json();
   }
 }
 

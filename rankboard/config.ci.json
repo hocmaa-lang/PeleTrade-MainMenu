@@ -46,22 +46,6 @@
   },
   "products": [
     {
-      "key": "lav_kcup",
-      "radarId": "78c84c61-a350-4608-a4f9-2ecc3cf08c1a",
-      "asin": "B08TRVVCTB",
-      "name": "Lavazza K-Cup Variety Bundle — 40 Count, 4 Flavors",
-      "short": "Lavazza K-Cup 40ct",
-      "file": "lav_kcup.json"
-    },
-    {
-      "key": "lav_intenso",
-      "radarId": "585590bc-93f8-4e21-8683-6bd3842f3f13",
-      "asin": "B0DPXM5YK7",
-      "name": "Lavazza Expert Espresso Intenso Capsules — 72 Count",
-      "short": "Lavazza Expert Intenso",
-      "file": "lav_intenso.json"
-    },
-    {
       "key": "lav_blue",
       "radarId": "d38cbea7-a550-4158-93ce-447ce7b63fdd",
       "asin": "B09MJGWDXD",
@@ -70,36 +54,68 @@
       "file": "lav_blue.json"
     },
     {
-      "key": "senseo",
-      "radarId": "8a7097e5-f4b3-49f6-b9bc-3cc5e1ea8044",
-      "asin": "B00WEKKQ8A",
-      "name": "Senseo Classic Medium Roast Pods — 144 Count",
-      "short": "Senseo Classic 144ct",
-      "file": "senseo.json"
+      "key": "lav_intenso",
+      "radarId": "585590bc-93f8-4e21-8683-6bd3842f3f13",
+      "asin": "B0DPXM5YK7",
+      "name": "Lavazza Expert Espresso Intenso Capsules — 72 Count",
+      "short": "Expert Intenso 72ct",
+      "file": "lav_intenso.json"
     },
     {
-      "key": "pelecom",
-      "radarId": "6f3c2c45-abdd-4f00-bf40-751273f330c0",
-      "asin": "B0DD4CWPW2",
-      "name": "Pelecom Coffee Machine — Senseo-Pod Compatible",
-      "short": "Pelecom Machine",
-      "file": "pelecom.json"
+      "key": "lav_classico",
+      "radarId": "a672fd4b-e906-4b85-a25f-a23d231dead5",
+      "asin": "B0DPXHYKD2",
+      "name": "Lavazza Expert Espresso Classico Capsules — 72 Count",
+      "short": "Expert Classico 72ct",
+      "file": "lav_classico.json"
+    },
+    {
+      "key": "lav_kcup",
+      "radarId": "78c84c61-a350-4608-a4f9-2ecc3cf08c1a",
+      "asin": "B08TRVVCTB",
+      "name": "Lavazza K-Cup Variety Bundle — Light & Medium Roast",
+      "short": "K-Cup Bundle (TRVVCTB)",
+      "file": "lav_kcup.json"
+    },
+    {
+      "key": "lav_kcup_xcz",
+      "radarId": "6454996b-a973-4532-b5f0-d4974e83a235",
+      "asin": "B0FNXXCZH5",
+      "name": "Lavazza K-Cup Variety Bundle — Light-Medium Roast",
+      "short": "K-Cup Bundle (FNXXCZH5)",
+      "file": "lav_kcup_xcz.json"
+    },
+    {
+      "key": "lav_kcup_dolce",
+      "radarId": "4f07d19f-47dd-4a13-a39f-ee8dd94cd70d",
+      "asin": "B0FNXS6MMY",
+      "name": "Lavazza K-Cup 40 Pack — Dolcevita Classico + House Blend",
+      "short": "K-Cup Dolcevita 40ct",
+      "file": "lav_kcup_dolce.json"
     },
     {
       "key": "ml_sampler",
       "radarId": "42ddf761-fdf0-434d-b15d-b261bac565b0",
       "asin": "B0DNG4NZGN",
       "name": "Mighty Leaf Organic Tea Sampler — 40 Count, 8 Flavors",
-      "short": "Mighty Leaf Sampler 40ct",
+      "short": "Mighty Leaf 40ct",
       "file": "ml_sampler.json"
     },
     {
-      "key": "ml_tropical",
-      "radarId": "e280a8df-c526-4f2e-beff-e317ed1d677c",
-      "asin": "B000MUJPCC",
-      "name": "Mighty Leaf Green Tea Tropical — 100 Count Pouches",
-      "short": "Mighty Leaf Tropical",
-      "file": "ml_tropical.json"
+      "key": "ml_sampler30",
+      "radarId": "1f42c145-5b85-4da8-8200-65503cffa902",
+      "asin": "B0G14TYN1H",
+      "name": "Mighty Leaf Organic Tea Sampler — 30 Count, 6 Flavors",
+      "short": "Mighty Leaf 30ct",
+      "file": "ml_sampler30.json"
+    },
+    {
+      "key": "senseo",
+      "radarId": "8a7097e5-f4b3-49f6-b9bc-3cc5e1ea8044",
+      "asin": "B00WEKKQ8A",
+      "name": "Senseo Classic Medium Roast Pods — 144 Count",
+      "short": "Senseo Classic 144ct",
+      "file": "senseo.json"
     }
   ]
 }
