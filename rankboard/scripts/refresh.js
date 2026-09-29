@@ -62,6 +62,10 @@ step('Pulling fresh Rank Radar history');
 const pullArgs = [path.join(HERE, 'pull.js'), cfgPath];
 if (DAYS) pullArgs.push('--days', DAYS);
 process.stdout.write(sh(node, pullArgs).toString());
+if (CFG.monthly) {
+  step('Pulling monthly history');
+  process.stdout.write(sh(node, [path.join(HERE, 'pull_monthly.js'), cfgPath]).toString());
+}
 
 // ---------------------------------------------------------- 2. build + seal ---
 step('Rebuilding and sealing');

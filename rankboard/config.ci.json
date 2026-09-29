@@ -16,6 +16,12 @@
         "note": "<b>Rank only.</b> This view carries no sales or revenue — it is where the listings sit in Amazon's organic results. Crossed cells are days the tracker did not run, not days the product vanished."
       },
       {
+        "label": "Monthly progress",
+        "sub": "Top-10 / top-50 keywords per ASIN, month by month",
+        "inline": "monthly.html",
+        "note": "<b>Rank only.</b> One number per keyword per month: its median organic rank over the month's crawled days. The current month is month-to-date."
+      },
+      {
         "label": "Senseo sales",
         "sub": "Daily sales by ASIN",
         "url": "https://hocmaa-lang.github.io/senseo-dashboard/",
@@ -41,6 +47,12 @@
         "as": "keywords.html",
         "passEnv": "RANKBOARD_PELETRADE_PASS",
         "title": "PELETRADE — keyword rank by day"
+      },
+      {
+        "src": "monthly.html",
+        "as": "monthly.html",
+        "passEnv": "RANKBOARD_PELETRADE_PASS",
+        "title": "PELETRADE — monthly organic progress"
       }
     ]
   },
@@ -149,5 +161,8 @@
       "short": "Pelecom Machine",
       "file": "pelecom.json"
     }
-  ]
+  ],
+  "monthly": {
+    "since": "2025-12"
+  }
 }

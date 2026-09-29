@@ -36,6 +36,8 @@ process.stdout.write(run('build.js', cfgPath));
 step('Building pages');
 process.stdout.write(run('page_summary.js', OUT));
 process.stdout.write(run('page_keywords.js', OUT));
+// Monthly progress needs pull_monthly.js to have run; it only builds when asked for.
+if (CFG.monthly) process.stdout.write(run('page_monthly.js', path.resolve(cfgPath)));
 // The hub embeds the pages above, so it must be composed after them.
 if (CFG.hub) process.stdout.write(run('page_hub.js', OUT, path.resolve(cfgPath)));
 
@@ -54,6 +56,9 @@ const CHECKS = {
   'keywords.html': 'keywords ranking at least once',
   'dashboard.html': 'search vol in top 10',
 };
+// data-ready is set on <body> by the page's own script as its last act, so it only
+// appears in the dumped DOM when every table and the chart rendered without throwing.
+if (CFG.monthly) CHECKS['monthly.html'] = 'monthly ready';
 // The hub's tab bar is built by script; "hub ready" only appears if that ran.
 if (CFG.hub) CHECKS['hub.html'] = 'hub ready';
 

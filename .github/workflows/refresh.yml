@@ -42,6 +42,15 @@ jobs:
           test -x /usr/bin/google-chrome || { echo "Chrome missing — refusing to publish unverified"; exit 1; }
           /usr/bin/google-chrome --version
 
+      # Closed months never change, so pull_monthly.js caches them. The repo is public,
+      # so that cache lives in the Actions cache, never in a commit. A miss is harmless:
+      # it just re-pulls every month (~5 min).
+      - uses: actions/cache@v4
+        with:
+          path: .rankboard/spill/monthly
+          key: rankboard-monthly-${{ github.run_id }}
+          restore-keys: rankboard-monthly-
+
       - name: Refresh, verify and publish
         env:
           DATADIVE_API_KEY: ${{ secrets.DATADIVE_API_KEY }}
@@ -55,7 +64,7 @@ jobs:
       - name: Stage the site
         run: |
           mkdir -p _site
-          cp index.html keywords.html september-emails.html _site/
+          cp index.html keywords.html monthly.html september-emails.html _site/
           touch _site/.nojekyll
           ls -la _site
 
