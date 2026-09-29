@@ -49,9 +49,25 @@
       "key": "lav_blue",
       "radarId": "d38cbea7-a550-4158-93ce-447ce7b63fdd",
       "asin": "B09MJGWDXD",
-      "name": "Lavazza Blue Capsules Variety Pack — 100 Count",
+      "name": "Lavazza Blue Capsules Variety Pack — 100 Count (family also covers B08P7FSLBZ · B0932V5XXS · B09NNQSYNX)",
       "short": "Lavazza Blue 100ct",
       "file": "lav_blue.json"
+    },
+    {
+      "key": "lav_blue_25",
+      "radarId": "fae9ab4d-a554-4365-9571-cd1b28b78f0b",
+      "asin": "B093BQRDML",
+      "name": "Lavazza Blue Capsules Variety Pack — 100 Count, 25 Pods Each",
+      "short": "Lavazza Blue 4×25",
+      "file": "lav_blue_25.json"
+    },
+    {
+      "key": "lav_blue_20",
+      "radarId": "ca20e8d1-1ba8-4124-a77c-de1f9527d9ac",
+      "asin": "B09N7SQBPZ",
+      "name": "Lavazza Blue Capsules Variety Pack — 100 Count, 20 Pods Each",
+      "short": "Lavazza Blue 5×20",
+      "file": "lav_blue_20.json"
     },
     {
       "key": "lav_intenso",
@@ -68,6 +84,14 @@
       "name": "Lavazza Expert Espresso Classico Capsules — 72 Count",
       "short": "Expert Classico 72ct",
       "file": "lav_classico.json"
+    },
+    {
+      "key": "lav_classy",
+      "radarId": "f10b855a-948c-4d0d-a3b6-bcc6b9428908",
+      "asin": "B0DPXH8ZHL",
+      "name": "Lavazza Classy Plus Coffee Maker + 72 Intenso Capsules",
+      "short": "Classy Plus bundle",
+      "file": "lav_classy.json"
     },
     {
       "key": "lav_kcup",
@@ -113,9 +137,17 @@
       "key": "senseo",
       "radarId": "8a7097e5-f4b3-49f6-b9bc-3cc5e1ea8044",
       "asin": "B00WEKKQ8A",
-      "name": "Senseo Classic Medium Roast Pods — 144 Count",
+      "name": "Senseo Classic Medium Roast Pods (family also covers B00J70FP0E 48ct)",
       "short": "Senseo Classic 144ct",
       "file": "senseo.json"
+    },
+    {
+      "key": "pelecom",
+      "radarId": "a5fa2733-7d86-4c0e-9c8b-c6a2ea2d67a8",
+      "asin": "B0DD4CWPW2",
+      "name": "Pelecom Coffee Machine — Senseo-Pod Compatible",
+      "short": "Pelecom Machine",
+      "file": "pelecom.json"
     }
   ]
 }
