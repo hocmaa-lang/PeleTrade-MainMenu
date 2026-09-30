@@ -2,6 +2,10 @@
 // per day, colour = rank band. Sequential single hue (light -> dark = worse -> better),
 // with reserved neutrals for "not ranking" and "no crawl" so the two never blur.
 const fs = require('fs');
+// Shown on the page so a reader's screenshot says which template they are looking at
+// (a cached older copy vs. the current one). Bump it whenever the template changes;
+// it is deliberately NOT a timestamp, which would make every refresh look "changed".
+const TEMPLATE_VERSION = 'v2026-09-30c';
 const P = JSON.parse(fs.readFileSync(process.argv[2] + '/payload.json', 'utf8'));
 
 // attach the per-day gap flags onto each product so the client can grey those columns
@@ -105,9 +109,11 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .dows span{width:11px;flex:0 0 auto;text-align:center;font-weight:600}
 .dows span.m{color:var(--markink);font-weight:800}
 </style></head><body><div class="wrap">
+<div class="note" id="diag" translate="no" style="display:none;margin:0 0 14px;border-left-color:var(--bad)"></div>
 <div class="greet" id="greet"></div>
 <h1>${P.brandTitle} — keyword rank, day by day</h1>
-<div class="sub">${P.marketplace} · ${P.dates[0]} → ${P.built} · Data Dive Rank Radar · one cell = one day</div>
+<div class="sub">${P.marketplace} · ${P.dates[0]} → ${P.built} · Data Dive Rank Radar · one cell = one day
+  <span style="color:var(--ink3);font-size:11px"> · page ${TEMPLATE_VERSION}</span></div>
 
 <div class="asinbar">
   <label for="asin">Search by ASIN</label>
@@ -207,7 +213,7 @@ document.getElementById('asins').innerHTML=Object.entries(ASINMAP)
   .map(([a,v])=>'<option value="'+a+'">'+v.pn+(v.via?' (family of '+v.via+')':'')+'</option>').join('');
 const PASIN=Object.fromEntries(DATA.products.map(p=>[p.key,p.asin||'']));
 
-let filt='all',sort='sv',q='',aq='';
+let filt='all',sort='sv',q='',aq='',LAST=0;
 function asinMatch(pk){
   if(!aq) return true;
   return Object.entries(ASINMAP).some(([a,v])=>v.pk===pk&&a.includes(aq));
@@ -233,6 +239,7 @@ function render(){
   if(aq&&!list.length&&Object.keys(ASINMAP).some(a=>a.includes(aq)))
     document.getElementById('asinnote').innerHTML+=' <b>No keyword has ranked for it in this window yet</b>'+
       ' — a newly created radar fills in after its first crawls.';
+  LAST=list.length;
   document.getElementById('cnt').textContent=list.length+' keywords ranking at least once';
   document.getElementById('rows').innerHTML=list.map(r=>{
     const cells=r.series.map((v,i)=>{
@@ -295,21 +302,52 @@ ruler();render();
 // That is something outside the page — browser auto-translate being the usual suspect —
 // rewriting the DOM after load. The page is marked translate="no", but if anything
 // still wipes what the script built, rebuild it rather than leave a blank table.
+// Compare against what render() actually DREW (LAST), never against the counter text:
+// a translator may rewrite that text instead of deleting it, and then a text-based
+// check sees "something there" and never repairs.
+let WIPES=0;
 (function(){
   let t=null;
   const check=()=>{t=null;
-    const cnt=document.getElementById('cnt'), rows=document.getElementById('rows');
+    const rows=document.getElementById('rows');
     if(!rows) return;
-    const want=/^\\d+ keywords/.test(cnt?cnt.textContent:'')?parseInt(cnt.textContent,10):null;
     const have=rows.querySelectorAll('tr').length;
-    if((want&&have===0)||!cnt||!cnt.textContent||!document.querySelector('#ruler .dates')){
-      ruler();render();greet();
+    if((LAST>0&&have<LAST)||!document.querySelector('#ruler .dates')){
+      WIPES++;ruler();render();greet();diag();
     } else if(!document.getElementById('greet').textContent) greet();
   };
   new MutationObserver(()=>{ if(!t) t=setTimeout(check,250); })
     .observe(document.body,{childList:true,subtree:true,characterData:true});
-  setInterval(check,3000);
+  setInterval(()=>{check();diag();},2000);
 })();
+
+// Diagnostic banner. The "rows vanish on scroll" report could not be reproduced in a
+// clean Chrome, and nothing in this page listens to scroll — so the cause is outside
+// it. Name the cause on screen instead of guessing: translators leave fingerprints
+// (Google: html.translated-ltr/rtl and a rewritten lang; Microsoft/Edge: _msttexthash
+// attributes; both: <font> wrappers), and WIPES counts outside deletions of the table.
+function translated(){
+  const h=document.documentElement;
+  if(/translated-(ltr|rtl)/.test(h.className)) return 'Google Translate';
+  if(h.lang&&!/^en/i.test(h.lang)) return 'page translation (language set to '+h.lang+')';
+  if(document.querySelector('[_msttexthash],[_msthash]')) return 'Microsoft Edge Translator';
+  if(document.querySelector('font[style*="vertical-align"]')) return 'a page translator';
+  return null;
+}
+function diag(){
+  const el=document.getElementById('diag');if(!el) return;
+  const tr=translated();
+  if(!tr&&!WIPES){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<b>⚠ '+(tr?'Your browser is translating this page ('+tr+').':'Something outside this page cleared the table '+WIPES+'×.')+'</b> '+
+    (tr?'That is what makes the data disappear. Click the translate icon in the address bar and choose '+
+      '<b>"Show original"</b> / <b>"Never translate this site"</b>, then reload. ':
+      'It was rebuilt automatically. If it keeps happening, disable browser extensions for this site (translation, reader or ad-block) and reload. ')+
+    '<span dir="rtl" lang="he" style="display:block;margin-top:4px">'+(tr
+      ?'הדפדפן מתרגם את הדף — זה מה שמעלים את הנתונים. לחץ על אייקון התרגום בשורת הכתובת ובחר "הצג מקור" / "אף פעם אל תתרגם את האתר הזה", ורענן.'
+      :'משהו מחוץ לדף מחק את הטבלה ('+WIPES+' פעמים) והיא נבנתה מחדש. אם זה חוזר — כבה תוספים לאתר הזה (תרגום, קריאה, חוסם פרסומות) ורענן.')+'</span>';
+}
+diag();
 </script></body></html>`;
 fs.writeFileSync(process.argv[2] + '/keywords.html', html);
 console.log('keywords.html', fs.statSync(process.argv[2] + '/keywords.html').size, 'bytes');
