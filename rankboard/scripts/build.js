@@ -24,15 +24,34 @@ const PRODUCTS = CFG.products;
 
 const RANKED = r => r != null && r > 0 && r <= 100;   // 101 = not on page 1-ish at all
 
+// Days to highlight as a column band, as JS getDay(): 0=Sun 1=Mon … 5=Fri 6=Sat.
+// Empty = no marking, so every existing dashboard renders exactly as before.
+const MARK = Array.isArray(CFG.markDays) ? CFG.markDays.map(Number) : [];
+const DOW = d => new Date(d + 'T00:00:00Z').getUTCDay();
+
 const out = { brand: CFG.brand, brandTitle: CFG.brandTitle || CFG.brand,
   teamName: CFG.teamName || CFG.brandTitle || CFG.brand,
-  marketplace: CFG.marketplace || 'Amazon US', built: null, products: [], dates: [] };
+  marketplace: CFG.marketplace || 'Amazon US', markDays: MARK,
+  markLabel: CFG.markLabel || '', built: null, products: [], dates: [] };
 const allDates = new Set();
 
 for (const p of PRODUCTS) {
   const kws = JSON.parse(fs.readFileSync(T + p.file, 'utf8'));
   const byDate = {};      // date -> {t10,t50,t100,sv10,sv50}
   const rows = [];
+
+  // The API returns `ranks` UNSORTED for some keywords (observed on the MCP path:
+  // 1 of 55 on one radar, 6 of 19 on another). Everything downstream treats the
+  // array as a time series against a shared date header, so an unsorted row is
+  // silently scrambled against its own dates. pull.js sorts on the REST path;
+  // this is the chokepoint both paths share, so it has to happen here too.
+  let resorted = 0;
+  for (const k of kws) {
+    const before = k.ranks.map(r => r.date).join();
+    k.ranks.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    if (k.ranks.map(r => r.date).join() !== before) resorted++;
+  }
+  if (resorted) console.log(`  RESORTED ${resorted} keyword series for ${p.short}`);
 
   for (const k of kws) {
     const sv = k.searchVolume || 0;
@@ -86,6 +105,8 @@ for (const p of PRODUCTS) {
     ...p,
     kwCount: kws.length,
     dates,
+    dow: dates.map(DOW),
+    mark: dates.map(d => MARK.includes(DOW(d))),
     trend,
     coverage: { days: trend.length, withData: live.length,
                 gaps: trend.filter(t => t.gap).map(t => t.d),

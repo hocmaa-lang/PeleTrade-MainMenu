@@ -14,18 +14,21 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
   --ink:#1B211E; --ink2:#4C5551; --ink3:#7C8681;
   --c1:#128F5E; --c2:#C2620A; --c3:#4169C4;
   --good:#1F7A4C; --bad:#B0402C; --flat:#7C8681;
+  --markfill:rgba(194,98,10,.10); --markink:#9A5308;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0E1310; --surface:#141A17; --line:#26302B; --grid:#1E2621;
   --ink:#EAEFEB; --ink2:#A9B4AE; --ink3:#77837D;
   --c1:#25A473; --c2:#D9762F; --c3:#5F8CE0;
   --good:#4CBF87; --bad:#E0785F; --flat:#77837D;
+  --markfill:rgba(217,118,47,.10); --markink:#E09355;
 }}
 :root[data-theme="dark"]{
   --bg:#0E1310; --surface:#141A17; --line:#26302B; --grid:#1E2621;
   --ink:#EAEFEB; --ink2:#A9B4AE; --ink3:#77837D;
   --c1:#25A473; --c2:#D9762F; --c3:#5F8CE0;
   --good:#4CBF87; --bad:#E0785F; --flat:#77837D;
+  --markfill:rgba(217,118,47,.10); --markink:#E09355;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);
@@ -80,7 +83,7 @@ footer{color:var(--ink3);font-size:12px;text-align:center;margin-top:28px}
 
 <div class="greet" id="greet"></div>
 <h1>${P.brandTitle} — organic rank</h1>
-<div class="sub">${P.marketplace} · 30-day window ending ${P.built} · source: Data Dive Rank Radar</div>
+<div class="sub">${P.marketplace} · ${P.dates.length}-day window ${P.dates[0]} → ${P.built} · source: Data Dive Rank Radar</div>
 
 <div class="note"><b>Read the gaps as gaps.</b> The tracker did not crawl on every day
 in this window. A day where <i>every</i> tracked keyword reads 101 is a crawl that did
@@ -100,6 +103,8 @@ var BRAND=${JSON.stringify(P.teamName || P.brandTitle)};
   var el=document.getElementById('greet');
   if(el) el.innerHTML=g+', <b>'+BRAND+' team</b>';})();
 const DATA = ${JSON.stringify(P)};
+const MARKLBL = ${JSON.stringify((P.markDays && P.markDays.length) ? (P.markLabel || 'marked days') : '')};
+const DOWNAME = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const C = ['var(--c1)','var(--c2)','var(--c3)'];
 const fmt = n => n.toLocaleString('en-US');
 const tt = document.getElementById('tt');
@@ -145,6 +150,14 @@ function chart(p,ci){
     return '<line class="gl" x1="'+L+'" y1="'+y(v)+'" x2="'+(W-R)+'" y2="'+y(v)+'"/>'+
            '<text class="ax" x="'+(L-7)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';}).join('');
 
+  // Marked-day columns (e.g. Fri/Sat/Sun) sit under everything else, in their own
+  // hue, so they never get confused with the grey no-crawl bands drawn next.
+  const markBands=(p.mark||[]).map((m,i)=>{
+    if(!m)return '';
+    const w=pts.length<2?iw:iw/(pts.length-1);
+    return '<rect x="'+(x(i)-w/2)+'" y="'+T+'" width="'+w+'" height="'+ih+
+      '" fill="var(--markfill)"/>';}).join('');
+
   const gapBands=pts.map((t,i)=>{
     if(!t.gap&&!t.partial)return '';
     const w=pts.length<2?iw:iw/(pts.length-1);
@@ -159,11 +172,12 @@ function chart(p,ci){
     const lbl=t.gap?'<span style="color:var(--ink3)">no crawl this day</span>'
       :(t.partial?'<span style="color:var(--ink3)">partial crawl — '+t.t100+' keywords returned</span>'
       :'ranking '+t.t100+' · top 50 '+t.t50+' · top 10 '+t.t10);
+    const hd=p.dow?t.d+' · '+DOWNAME[p.dow[i]]:t.d;
     return '<rect x="'+(x(i)-w/2)+'" y="'+T+'" width="'+w+'" height="'+ih+
-      '" fill="transparent" data-h="<b>'+t.d+'</b>'+lbl.replace(/"/g,'&quot;')+'"/>';}).join('');
+      '" fill="transparent" data-h="<b>'+hd+'</b>'+lbl.replace(/"/g,'&quot;')+'"/>';}).join('');
 
   return '<div class="chartwrap"><svg viewBox="0 0 '+W+' '+H+'" width="100%" style="min-width:640px">'+
-    gapBands+gridY+
+    markBands+gapBands+gridY+
     '<g fill="none" stroke="'+C[ci]+'" stroke-width="2" stroke-linecap="round" opacity=".32">'+seg('t100')+'</g>'+
     '<g fill="none" stroke="'+C[ci]+'" stroke-width="2" stroke-linecap="round" opacity=".62" stroke-dasharray="5 3">'+seg('t50')+'</g>'+
     '<g fill="none" stroke="'+C[ci]+'" stroke-width="2.5" stroke-linecap="round">'+seg('t10')+'</g>'+
@@ -173,6 +187,7 @@ function chart(p,ci){
       '<span><i style="background:'+C[ci]+';opacity:.62"></i>top 50</span>'+
       '<span><i style="background:'+C[ci]+';opacity:.32"></i>ranking at all</span>'+
       '<span><i style="background:var(--ink3);opacity:.35;height:10px;width:10px;border-radius:2px"></i>no / partial crawl</span>'+
+      (MARKLBL?'<span style="color:var(--markink)"><i style="background:var(--markfill);height:10px;width:10px;border-radius:2px;outline:1px solid var(--markink)"></i>'+MARKLBL+'</span>':'')+
     '</div>';
 }
 
