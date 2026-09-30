@@ -5,7 +5,7 @@ const fs = require('fs');
 // Shown on the page so a reader's screenshot says which template they are looking at
 // (a cached older copy vs. the current one). Bump it whenever the template changes;
 // it is deliberately NOT a timestamp, which would make every refresh look "changed".
-const TEMPLATE_VERSION = 'v2026-09-30c';
+const TEMPLATE_VERSION = 'v2026-09-30d';
 const P = JSON.parse(fs.readFileSync(process.argv[2] + '/payload.json', 'utf8'));
 
 // attach the per-day gap flags onto each product so the client can grey those columns
@@ -260,6 +260,26 @@ function render(){
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
       '<td class="n">'+badge(r.start)+'</td><td class="n">'+badge(r.end)+'</td>'+
       '<td class="n">'+badge(r.best)+'</td><td class="n">'+mv+'</td></tr>';}).join('');
+  // An empty product must say WHY it is empty. A brand-new radar has no crawl at all
+  // yet, which is not the same thing as a product that ranks nowhere — and a bare
+  // empty table read to the client as "something is wrong with these ASINs".
+  if(!list.length&&filt!=='all'&&!q){
+    const p=DATA.products.find(x=>x.key===filt);
+    // coverage.days===0: the radar returned no measurements at all (new, never crawled).
+    // days>0 but withData===0: crawled every day and EVERY keyword came back "not found" —
+    // build.js files those as gaps, but a whole window of them means the listing is not
+    // showing in search at all (suppressed, inactive, out of stock), not a missed crawl.
+    const id=p?(p.short+(p.asin?' ('+p.asin+')':'')):'';
+    const msg=!p?'':p.coverage.days===0
+      ?'<b>No crawl yet for '+id+'.</b> This Rank Radar is new — Data Dive has not measured it yet, '+
+        'not even as "not ranking". Rows appear here after its first crawl, usually within 24–48 hours of creation.'
+      :p.coverage.withData===0
+      ?'<b>'+id+' was not found in the top 100 for ANY tracked keyword on ANY of '+p.coverage.days+' days.</b> '+
+        'The tracker ran, but the listing never appeared in search. That pattern usually means the listing is inactive, '+
+        'suppressed or out of stock — check it in Seller Central.'
+      :'<b>'+id+' did not rank in the top 100 for any tracked keyword in this window</b> ('+p.coverage.withData+' crawled days).';
+    if(msg) document.getElementById('rows').innerHTML='<tr><td colspan="7" style="white-space:normal;padding:18px 14px;color:var(--ink2);height:auto">'+msg+'</td></tr>';
+  }
 }
 document.querySelectorAll('.bar button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.bar button').forEach(x=>x.classList.remove('on'));
