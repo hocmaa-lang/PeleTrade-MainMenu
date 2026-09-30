@@ -72,7 +72,13 @@ h1{font-size:19px;letter-spacing:-.02em;margin:0;font-weight:750}
  background:var(--chip);padding:5px 10px;border-radius:6px;white-space:nowrap}
 .ext:hover{border-color:var(--s1);color:var(--ink)}
 .ext[hidden]{display:none}
-nav{display:flex;gap:6px;overflow-x:auto}
+/* overflow-x:auto alone makes overflow-y compute to auto too, and the tabs'
+   translateY(1px) overflowed by one pixel — so the tab row grew its own vertical
+   scrollbar, a second scroll area clients read as the page being stuck. */
+nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+@media (max-height:820px){header{padding-top:8px}.top{margin-bottom:6px}h1{font-size:16px}
+ button.tab{padding:6px 14px 7px}button.tab .s{display:none}}
 button.tab{appearance:none;border:1px solid var(--rule);border-bottom:none;background:var(--panel);
  color:var(--ink2);font-family:var(--sans);cursor:pointer;padding:9px 16px 10px;
  border-radius:8px 8px 0 0;text-align:left;white-space:nowrap;transform:translateY(1px)}
@@ -88,6 +94,10 @@ iframe[hidden]{display:none}
 .note{flex:0 0 auto;padding:7px 20px;font-size:12px;color:var(--muted);background:var(--panel);
  border-top:1px solid var(--rule)}
 .note b{color:var(--ink2);font-weight:600}
+.note{display:flex;gap:10px;align-items:baseline}
+.note span{flex:1 1 auto}
+.note button{appearance:none;border:0;background:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px}
+.note[hidden]{display:none}
 </style></head><body>
 <header>
   <div class="top">
@@ -99,7 +109,7 @@ iframe[hidden]{display:none}
   <nav id="nav" role="tablist"></nav>
 </header>
 <main id="main"></main>
-<p class="note" id="note"></p>
+<p class="note" id="notebar"><span id="note"></span><button type="button" id="noteclose" title="Hide this note" aria-label="Hide this note">✕</button></p>
 <script id="hubdata" type="application/json">${JSON.stringify(tabs.map(t => ({
   id: t.id, label: t.label, sub: t.sub, note: t.note, kind: t.kind, url: t.url || null, b64: t.b64 || null
 })))}</script>
@@ -140,6 +150,10 @@ iframe[hidden]{display:none}
         if (t.kind === 'url'){ ext.href = t.url; ext.hidden = false; }
         else { ext.hidden = true; }
         note.innerHTML = t.note || '';
+        // The note costs a row of height on every tab; a reader who has read it once
+        // can close it, and it stays closed for this browser (storage may be blocked).
+        var closed = false; try { closed = localStorage.getItem('hubNoteClosed') === '1'; } catch(e){}
+        document.getElementById('notebar').hidden = closed || !t.note;
       }
     });
     try { history.replaceState(null, '', '#' + id); } catch(e){}
@@ -154,6 +168,11 @@ iframe[hidden]{display:none}
     b.querySelector('.s').textContent = t.sub;
     b.addEventListener('click', function(){ show(t.id); });
     nav.appendChild(b);
+  });
+
+  document.getElementById('noteclose').addEventListener('click', function(){
+    document.getElementById('notebar').hidden = true;
+    try { localStorage.setItem('hubNoteClosed', '1'); } catch(e){}
   });
 
   var want = (location.hash || '').replace('#','');

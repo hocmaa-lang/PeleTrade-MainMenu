@@ -55,6 +55,13 @@ button,select,input{font:inherit;font-size:13.5px;color:var(--ink);background:va
 button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 input{cursor:text;min-width:190px}
 .spacer{flex:1}
+.asinbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:18px 0 0;padding:10px 12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;max-width:560px}
+.asinbar label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.asinbar input{flex:1 1 200px;min-width:0;font-size:15px;text-transform:uppercase;letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;border-width:2px}
+.asinbar input:focus{outline:none;border-color:var(--r1)}
+.asinbar button{padding:6px 10px}
 .count{color:var(--ink3);font-size:12.5px}
 .key{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--ink2);
   margin:0 0 14px}
@@ -102,13 +109,16 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 <h1>${P.brandTitle} — keyword rank, day by day</h1>
 <div class="sub">${P.marketplace} · ${P.dates[0]} → ${P.built} · Data Dive Rank Radar · one cell = one day</div>
 
+<div class="asinbar">
+  <label for="asin">Search by ASIN</label>
+  <input id="asin" list="asins" placeholder="e.g. B09MJGWDXD" autocomplete="off" spellcheck="false">
+  <datalist id="asins"></datalist>
+  <button type="button" id="asinclr" title="Clear">✕</button>
+</div>
 <div class="bar">
   <button data-p="all" class="on">All products</button>
   ${P.products.map(p => `<button data-p="${p.key}">${p.short}</button>`).join('')}
   <input id="q" placeholder="filter keywords…">
-  <input id="asin" list="asins" placeholder="search ASIN…" autocomplete="off" spellcheck="false"
-    style="min-width:150px;text-transform:uppercase;font-variant-numeric:tabular-nums">
-  <datalist id="asins"></datalist>
   <select id="sort">
     <option value="sv">Sort: search volume</option>
     <option value="best">Sort: best rank</option>
@@ -243,16 +253,27 @@ function render(){
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
       '<td class="n">'+badge(r.start)+'</td><td class="n">'+badge(r.end)+'</td>'+
       '<td class="n">'+badge(r.best)+'</td><td class="n">'+mv+'</td></tr>';}).join('');
-  document.querySelectorAll('.c').forEach(c=>{
-    c.addEventListener('mousemove',e=>show(e,c.dataset.h));
-    c.addEventListener('mouseleave',hide);});
 }
 document.querySelectorAll('.bar button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.bar button').forEach(x=>x.classList.remove('on'));
+  // Product and ASIN are two ways to pick the same thing, so choosing one clears the
+  // other. Stacked, "ASIN of product A" + "product B" matched nothing and the table
+  // went blank — which reads as a frozen page, not as an empty filter.
+  document.getElementById('asin').value='';aq='';
   b.classList.add('on');filt=b.dataset.p;render();}));
 document.getElementById('sort').addEventListener('change',e=>{sort=e.target.value;render();});
 document.getElementById('q').addEventListener('input',e=>{q=e.target.value.toLowerCase();render();});
-document.getElementById('asin').addEventListener('input',e=>{aq=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');render();});
+// ONE delegated listener for the tooltip. This used to bind mousemove + mouseleave on
+// every cell and re-bind all of them on every filter click — ~25,000 listeners for
+// 400 keywords x 30 days, rebuilt per click. A client reported the view "stuck" and
+// unclickable; the per-cell binding is the part that scales with the data.
+(function(){const rows=document.getElementById('rows');
+  rows.addEventListener('mousemove',e=>{const c=e.target.closest&&e.target.closest('.c');if(c)show(e,c.dataset.h);else hide();});
+  rows.addEventListener('mouseleave',hide);})();
+document.getElementById('asin').addEventListener('input',e=>{aq=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(aq&&filt!=='all'){filt='all';document.querySelectorAll('.bar button').forEach(x=>x.classList.toggle('on',x.dataset.p==='all'));}
+  render();});
+document.getElementById('asinclr').addEventListener('click',()=>{const i=document.getElementById('asin');i.value='';aq='';render();i.focus();});
 
 // date ruler in the strip header, aligned cell-for-cell with the rows below.
 // The weekday letter row is what actually names the marked days — the band alone
