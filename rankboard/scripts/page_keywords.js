@@ -106,6 +106,9 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
   <button data-p="all" class="on">All products</button>
   ${P.products.map(p => `<button data-p="${p.key}">${p.short}</button>`).join('')}
   <input id="q" placeholder="filter keywords…">
+  <input id="asin" list="asins" placeholder="search ASIN…" autocomplete="off" spellcheck="false"
+    style="min-width:150px;text-transform:uppercase;font-variant-numeric:tabular-nums">
+  <datalist id="asins"></datalist>
   <select id="sort">
     <option value="sv">Sort: search volume</option>
     <option value="best">Sort: best rank</option>
@@ -125,6 +128,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
   <span><i style="background:var(--gap);background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(128,128,128,.5) 2px,rgba(128,128,128,.5) 3px)"></i>no crawl</span>
   ${MARK.length ? `<span style="color:var(--markink);font-weight:600"><i style="background:var(--mark);border-color:var(--markink)"></i>${MARKLBL}</span>` : ''}
 </div>
+
+<div class="note" id="asinnote" style="display:none;margin:0 0 12px"></div>
 
 <div class="card"><div class="scroll"><table>
   <thead><tr>
@@ -179,13 +184,45 @@ DATA.products.forEach(p=>p.rows.forEach(r=>ALL.push({...r,pk:p.key,pn:p.short,
   dates:p.dates,flags:p.flags,dow:p.dow,mark:p.mark,markCSS:markCSS(p.mark),
   cov:p.coverage.withData})));
 
-let filt='all',sort='sv',q='';
+// ASIN search. A radar tracks one variation FAMILY, so a sibling ASIN named in the
+// product's name ("family also covers …") resolves to that radar — and the page says
+// so, rather than implying the sibling has a radar of its own.
+const ASINRE=/B0[A-Z0-9]{8}/g;
+const ASINMAP={};   // asin -> {pk, via}  (via = the radar's own ASIN when reached through the family)
+DATA.products.forEach(p=>{
+  if(p.asin) ASINMAP[p.asin]={pk:p.key,via:null,pn:p.short};
+  (p.name.match(ASINRE)||[]).forEach(a=>{ if(!ASINMAP[a]) ASINMAP[a]={pk:p.key,via:p.asin,pn:p.short}; });
+});
+document.getElementById('asins').innerHTML=Object.entries(ASINMAP)
+  .map(([a,v])=>'<option value="'+a+'">'+v.pn+(v.via?' (family of '+v.via+')':'')+'</option>').join('');
+const PASIN=Object.fromEntries(DATA.products.map(p=>[p.key,p.asin||'']));
+
+let filt='all',sort='sv',q='',aq='';
+function asinMatch(pk){
+  if(!aq) return true;
+  return Object.entries(ASINMAP).some(([a,v])=>v.pk===pk&&a.includes(aq));
+}
+function asinNote(){
+  const el=document.getElementById('asinnote');
+  if(!aq){el.style.display='none';return;}
+  const hits=Object.entries(ASINMAP).filter(([a])=>a.includes(aq));
+  el.style.display='block';
+  if(!hits.length){el.innerHTML='<b>'+aq+'</b> is not tracked in this dashboard — no Rank Radar covers it.';return;}
+  if(hits.length===1&&hits[0][0]===aq){const v=hits[0][1];
+    el.innerHTML=v.via?'<b>'+aq+'</b> is tracked through <b>'+v.via+'</b> ('+v.pn+') — same variation family, so Amazon ranks them together and these rows are its ranks too.'
+      :'<b>'+aq+'</b> — '+v.pn+'.';return;}
+  el.innerHTML='Matching ASINs: '+hits.map(([a,v])=>'<b>'+a+'</b> ('+v.pn+(v.via?', via '+v.via:'')+')').join(' · ');
+}
 function render(){
-  let list=ALL.filter(r=>(filt==='all'||r.pk===filt)&&r.days>0
+  asinNote();
+  let list=ALL.filter(r=>(filt==='all'||r.pk===filt)&&r.days>0&&asinMatch(r.pk)
     &&(!q||r.kw.toLowerCase().includes(q)));
   const key={sv:r=>-r.sv,best:r=>r.best==null?999:r.best,now:r=>r.end==null?999:r.end,
              move:r=>r.delta==null?999:r.delta};
   list.sort((a,b)=>key[sort](a)-key[sort](b));
+  if(aq&&!list.length&&Object.keys(ASINMAP).some(a=>a.includes(aq)))
+    document.getElementById('asinnote').innerHTML+=' <b>No keyword has ranked for it in this window yet</b>'+
+      ' — a newly created radar fills in after its first crawls.';
   document.getElementById('cnt').textContent=list.length+' keywords ranking at least once';
   document.getElementById('rows').innerHTML=list.map(r=>{
     const cells=r.series.map((v,i)=>{
@@ -201,7 +238,7 @@ function render(){
       :r.delta===0?'<span class="fl">0</span>'
       :r.delta<0?'<span class="up">▲ '+(-r.delta)+'</span>':'<span class="dn">▼ '+r.delta+'</span>';
     return '<tr><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+r.kw+
-      (filt==='all'?'<div class="pr">'+r.pn+'</div>':'')+'</td>'+
+      (filt==='all'||aq?'<div class="pr">'+r.pn+(PASIN[r.pk]?' · '+PASIN[r.pk]:'')+'</div>':'')+'</td>'+
       '<td class="n">'+r.sv.toLocaleString()+'</td>'+
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
       '<td class="n">'+badge(r.start)+'</td><td class="n">'+badge(r.end)+'</td>'+
@@ -215,6 +252,7 @@ document.querySelectorAll('.bar button').forEach(b=>b.addEventListener('click',(
   b.classList.add('on');filt=b.dataset.p;render();}));
 document.getElementById('sort').addEventListener('change',e=>{sort=e.target.value;render();});
 document.getElementById('q').addEventListener('input',e=>{q=e.target.value.toLowerCase();render();});
+document.getElementById('asin').addEventListener('input',e=>{aq=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');render();});
 
 // date ruler in the strip header, aligned cell-for-cell with the rows below.
 // The weekday letter row is what actually names the marked days — the band alone
