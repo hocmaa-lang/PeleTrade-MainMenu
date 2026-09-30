@@ -139,6 +139,12 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--ink3);border-radius:8px;
   padding:11px 15px;margin:16px 0 0;font-size:13px;color:var(--ink2)}
 .note b{color:var(--ink)}
+.asinbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 10px;padding:10px 12px;
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;max-width:560px}
+.asinbar label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.asinbar input{flex:1 1 200px;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:var(--surface);
+  border:2px solid var(--line);border-radius:7px;padding:6px 10px;text-transform:uppercase;letter-spacing:.04em}
+.asinbar input:focus{outline:none;border-color:var(--r1)}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 12px}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 14px}
 .tile .k{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
@@ -160,6 +166,13 @@ svg text{fill:var(--ink3);font-size:11px}
 <div class="card"><div class="scroll"><table id="grid"></table></div></div>
 
 <h2 id="dh">ASIN detail</h2>
+<div class="asinbar">
+  <label for="asin">Search by ASIN</label>
+  <input id="asin" list="asins" placeholder="e.g. B09MJGWDXD" autocomplete="off" spellcheck="false">
+  <datalist id="asins"></datalist>
+  <button type="button" id="asinclr" title="Clear">✕</button>
+</div>
+<div class="note" id="asinnote" style="display:none;margin:0 0 10px"></div>
 <div class="bar" id="pbar"></div>
 <div id="tiles" class="tiles"></div>
 <div class="card"><div class="chart"><svg id="chart" width="100%" height="220" role="img" aria-label="Keywords by rank band per month"></svg></div>
@@ -269,6 +282,33 @@ function detail(){
   if(!rows.length)h+='<tr><td colspan="'+(MON.length+3)+'" class="nod" style="padding:18px">No keyword has ranked yet in the tracked months.</td></tr>';
   document.getElementById('kt').innerHTML=h+'</tbody>';
 }
+// ASIN search: resolves an ASIN to the radar that measures it — its own, or the
+// radar of its variation family (siblings are named in the product name).
+const ASINMAP={};
+D.products.forEach((p,i)=>{ if(p.asin) ASINMAP[p.asin]={i,via:null};
+  (p.name.match(/B0[A-Z0-9]{8}/g)||[]).forEach(a=>{ if(!ASINMAP[a]) ASINMAP[a]={i,via:p.asin}; }); });
+document.getElementById('asins').innerHTML=Object.entries(ASINMAP)
+  .map(([a,v])=>'<option value="'+a+'">'+D.products[v.i].short+(v.via?' (family of '+v.via+')':'')+'</option>').join('');
+function asinSearch(){
+  const aq=document.getElementById('asin').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const el=document.getElementById('asinnote');
+  if(!aq){el.style.display='none';return;}
+  const hits=Object.entries(ASINMAP).filter(([a])=>a.includes(aq));
+  const idx=[...new Set(hits.map(([,v])=>v.i))];
+  el.style.display='block';
+  if(!hits.length){el.innerHTML='<b>'+aq+'</b> is not tracked in this dashboard — no Rank Radar covers it.';return;}
+  if(idx.length>1){el.innerHTML='Matching ASINs: '+hits.map(([a,v])=>'<b>'+a+'</b> ('+D.products[v.i].short+')').join(' · ')+' — keep typing.';return;}
+  cur=idx[0];detail();
+  const exact=ASINMAP[aq], p=D.products[cur];
+  el.innerHTML=exact&&exact.via
+    ?'<b>'+aq+'</b> is measured through <b>'+exact.via+'</b> ('+p.short+') — same variation family, so Amazon ranks them together.'
+    :'<b>'+(exact?aq:hits[0][0])+'</b> — '+p.short+(p.stats.some(Boolean)?'.':' — a new radar; its first month fills in after the first crawls.');
+}
+document.getElementById('asin').addEventListener('input',asinSearch);
+document.getElementById('asinclr').addEventListener('click',()=>{const i=document.getElementById('asin');i.value='';asinSearch();i.focus();});
+// Clicking a product button directly makes a typed ASIN stale — clear it.
+document.getElementById('pbar').addEventListener('click',e=>{if(e.target.closest('button')){document.getElementById('asin').value='';document.getElementById('asinnote').style.display='none';}});
+
 grid();detail();addEventListener('resize',detail);
 document.body.dataset.ready='monthly ready';
 </script></body></html>`;
