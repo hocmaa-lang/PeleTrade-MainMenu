@@ -22,6 +22,14 @@ const MNAME = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'
 const today = new Date();
 const curKey = `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}`;
 
+// A keyword counts in a month only if it was measured on enough of that month's crawl
+// days. Without this, keywords added yesterday carried ONE day of data into the month
+// and a single lucky day was scored as a whole month — on PeleTrade that inflated
+// Lavazza Blue from 34 to 48 "top 10" overnight. 7 days, or every crawl day the month
+// had if it had fewer (the first week of a month-to-date column).
+const MIN_DAYS = 7;
+const enough = (v, M) => !!(v && M && v.n >= Math.min(MIN_DAYS, M.crawlDays));
+
 // month keys = union across products, from the configured start to now
 const monthSet = new Set();
 const products = CFG.products.map(p => {
@@ -48,7 +56,7 @@ const P = {
       let t10 = 0, t50 = 0, t100 = 0, sv10 = 0, sv50 = 0, withData = 0;
       for (const k of kws) {
         const v = M.kw[k.kw];
-        if (!v) continue;
+        if (!enough(v, M)) continue;
         withData++;
         if (v.med <= 10) { t10++; sv10 += k.sv; }
         if (v.med <= 50) { t50++; sv50 += k.sv; }
@@ -59,7 +67,7 @@ const P = {
     const rows = kws.map(k => ({
       kw: k.kw, sv: k.sv,
       m: months.map(m => { const v = c.months[m] && c.months[m].kw[k.kw];
-        return v ? [v.med > 100 ? null : Math.round(v.med), v.best, v.ranked, v.n] : 0; }),
+        return enough(v, c.months[m]) ? [v.med > 100 ? null : Math.round(v.med), v.best, v.ranked, v.n] : 0; }),
     }));
     return { key: p.key, short: p.short, name: p.name, asin: p.asin,
       kwCount: kws.length, totalSv, stats, rows };
@@ -168,8 +176,8 @@ appear as "not ranking". A keyword that touched #8 on three days and was absent 
 <i>not</i> count as top 10 — its typical position that month was nowhere. Days the tracker did not
 run at all are left out, so a missed crawl never drags a month down.
 <b>The current month is month-to-date.</b> Counts use only the keywords tracked today, so every
-month is measured on the same list; a keyword added recently has no value in earlier months
-("—"). <b>This is rank, not sales.</b></div>
+month is measured on the same list; a keyword counts in a month only once it has been measured
+on at least ${MIN_DAYS} of that month's days, so a keyword added recently shows "—" until then. <b>This is rank, not sales.</b></div>
 </div>
 <script>
 var BRAND=${JSON.stringify(P.teamName || P.brandTitle)};
@@ -198,7 +206,10 @@ function grid(){
       if(!s){h+='<td class="m"><span class="nod">—</span></td>';return;}
       const v=val(s), a=v/maxAll;
       const txt=metric==='sv50'?fmt(v):v;
-      const sub=metric==='sv50'?(p.totalSv?Math.round(100*v/p.totalSv)+'% of SV':''):s.withData+' w/ data';
+      // A month resting on only a few crawl days is flagged in the cell itself, not
+      // just in the tooltip — one day of data must not read like a whole month.
+      const sub=s.crawl<7?'only '+s.crawl+(s.crawl===1?' day':' days'):
+        metric==='sv50'?(p.totalSv?Math.round(100*v/p.totalSv)+'% of SV':''):s.withData+' w/ data';
       h+='<td class="m"><span class="cell" style="background:rgba(var(--heat),'+(0.06+0.5*a).toFixed(2)+');color:'+(a>0.55?'#fff':'var(--ink)')+'" title="'+s.crawl+' crawl days"><b>'+txt+'</b><small>'+sub+'</small></span></td>';});
     const d=(i,j)=>(i==null||j==null)?null:(val(p.stats[i])-val(p.stats[j]));
     const show=x=>x==null?'<span class="fl">—</span>':metric==='sv50'?(x===0?'<span class="d fl">0</span>':'<span class="d '+(x>0?'up':'dn')+'">'+(x>0?'▲ ':'▼ ')+fmt(Math.abs(x))+'</span>'):dl(x);
