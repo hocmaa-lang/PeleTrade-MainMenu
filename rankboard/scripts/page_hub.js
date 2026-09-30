@@ -47,7 +47,7 @@ const title = HUB.title || ((CFG.brandTitle || CFG.brand) + ' — dashboards');
 const team = CFG.teamName || CFG.brandTitle || CFG.brand;
 
 const page = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en" translate="no" class="notranslate"><head><meta charset="utf-8"><meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="robots" content="noindex,nofollow">

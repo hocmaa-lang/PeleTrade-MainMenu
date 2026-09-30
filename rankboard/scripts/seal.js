@@ -17,7 +17,7 @@ const tag = c.getAuthTag();
 const b64 = Buffer.concat([body, tag]).toString('base64');
 
 const page = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en" translate="no" class="notranslate"><head><meta charset="utf-8"><meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title}</title>
 <meta name="robots" content="noindex,nofollow">

@@ -74,7 +74,7 @@ const P = {
   }),
 };
 
-const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+const html = `<!doctype html><html lang="en" translate="no" class="notranslate"><head><meta charset="utf-8"><meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${P.brandTitle} — monthly organic progress</title>
 <style>

@@ -13,7 +13,7 @@ for (const p of P.products) p.flags = p.trend.map(t => t.gap ? 2 : (t.partial ? 
 const MARK = P.markDays || [];
 const MARKLBL = P.markLabel || (MARK.length ? 'marked days' : '');
 
-const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+const html = `<!doctype html><html lang="en" translate="no" class="notranslate"><head><meta charset="utf-8"><meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${P.brandTitle} — keyword rank by day</title>
 <style>
@@ -278,14 +278,38 @@ document.getElementById('asinclr').addEventListener('click',()=>{const i=documen
 // date ruler in the strip header, aligned cell-for-cell with the rows below.
 // The weekday letter row is what actually names the marked days — the band alone
 // tells you a column is special but not which day it is.
-(function ruler(){
+function ruler(){
   const p0=DATA.products[0], d=p0.dates, dow=p0.dow, mk=p0.mark;
   const dows=dow?'<div class="dows" style="background-image:'+markCSS(mk)+'">'+
     dow.map((w,i)=>'<span class="'+(mk&&mk[i]?'m':'')+'">'+DOWLTR[w]+'</span>').join('')+'</div>':'';
   document.getElementById('ruler').innerHTML='Rank each day \\u2192'+dows+'<div class="dates">'+
     d.map((x,i)=>'<span>'+((i%5===0||i===d.length-1)?x.slice(5):'')+'</span>').join('')+'</div>';
+}
+function greet(){var h=new Date().getHours();
+  var g=h<12?'Good morning':(h<18?'Good afternoon':'Good evening');
+  var el=document.getElementById('greet');if(el) el.innerHTML=g+', <b>'+BRAND+' team</b>';}
+ruler();render();
+
+// Self-repair. A client saw the table, scrolled, and watched every row, the greeting
+// and the date ruler vanish while the static text stayed (with its quotes rewritten).
+// That is something outside the page — browser auto-translate being the usual suspect —
+// rewriting the DOM after load. The page is marked translate="no", but if anything
+// still wipes what the script built, rebuild it rather than leave a blank table.
+(function(){
+  let t=null;
+  const check=()=>{t=null;
+    const cnt=document.getElementById('cnt'), rows=document.getElementById('rows');
+    if(!rows) return;
+    const want=/^\\d+ keywords/.test(cnt?cnt.textContent:'')?parseInt(cnt.textContent,10):null;
+    const have=rows.querySelectorAll('tr').length;
+    if((want&&have===0)||!cnt||!cnt.textContent||!document.querySelector('#ruler .dates')){
+      ruler();render();greet();
+    } else if(!document.getElementById('greet').textContent) greet();
+  };
+  new MutationObserver(()=>{ if(!t) t=setTimeout(check,250); })
+    .observe(document.body,{childList:true,subtree:true,characterData:true});
+  setInterval(check,3000);
 })();
-render();
 </script></body></html>`;
 fs.writeFileSync(process.argv[2] + '/keywords.html', html);
 console.log('keywords.html', fs.statSync(process.argv[2] + '/keywords.html').size, 'bytes');
