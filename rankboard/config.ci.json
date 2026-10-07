@@ -63,7 +63,8 @@
       "asin": "B09MJGWDXD",
       "name": "Lavazza Blue Capsules Variety Pack — 100 Count",
       "short": "Lavazza Blue 100ct",
-      "file": "lav_blue.json"
+      "file": "lav_blue.json",
+      "group": "Lavazza Blue"
     },
     {
       "key": "lav_intenso",
@@ -71,7 +72,8 @@
       "asin": "B0DPXM5YK7",
       "name": "Lavazza Expert Espresso Intenso Capsules — 72 Count",
       "short": "Expert Intenso 72ct",
-      "file": "lav_intenso.json"
+      "file": "lav_intenso.json",
+      "group": "Lavazza Expert"
     },
     {
       "key": "lav_classico",
@@ -79,7 +81,8 @@
       "asin": "B0DPXHYKD2",
       "name": "Lavazza Expert Espresso Classico Capsules — 72 Count",
       "short": "Expert Classico 72ct",
-      "file": "lav_classico.json"
+      "file": "lav_classico.json",
+      "group": "Lavazza Expert"
     },
     {
       "key": "lav_classy",
@@ -87,7 +90,8 @@
       "asin": "B0DPXH8ZHL",
       "name": "Lavazza Classy Plus Coffee Maker + 72 Intenso Capsules",
       "short": "Classy Plus bundle",
-      "file": "lav_classy.json"
+      "file": "lav_classy.json",
+      "group": "Lavazza Expert"
     },
     {
       "key": "lav_kcup",
@@ -95,7 +99,8 @@
       "asin": "B08TRVVCTB",
       "name": "Lavazza K-Cup Variety Bundle — Light & Medium Roast",
       "short": "K-Cup Bundle (TRVVCTB)",
-      "file": "lav_kcup.json"
+      "file": "lav_kcup.json",
+      "group": "Lavazza K-Cup"
     },
     {
       "key": "lav_kcup_xcz",
@@ -103,7 +108,8 @@
       "asin": "B0FNXXCZH5",
       "name": "Lavazza K-Cup Variety Bundle — Light-Medium Roast",
       "short": "K-Cup Bundle (FNXXCZH5)",
-      "file": "lav_kcup_xcz.json"
+      "file": "lav_kcup_xcz.json",
+      "group": "Lavazza K-Cup"
     },
     {
       "key": "lav_kcup_dolce",
@@ -111,7 +117,8 @@
       "asin": "B0FNXS6MMY",
       "name": "Lavazza K-Cup 40 Pack — Dolcevita Classico + House Blend",
       "short": "K-Cup Dolcevita 40ct",
-      "file": "lav_kcup_dolce.json"
+      "file": "lav_kcup_dolce.json",
+      "group": "Lavazza K-Cup"
     },
     {
       "key": "ml_sampler",
@@ -119,7 +126,8 @@
       "asin": "B0DNG4NZGN",
       "name": "Mighty Leaf Organic Tea Sampler — 40 Count, 8 Flavors",
       "short": "Mighty Leaf 40ct",
-      "file": "ml_sampler.json"
+      "file": "ml_sampler.json",
+      "group": "Mighty Leaf"
     },
     {
       "key": "ml_sampler30",
@@ -127,7 +135,8 @@
       "asin": "B0G14TYN1H",
       "name": "Mighty Leaf Organic Tea Sampler — 30 Count, 6 Flavors",
       "short": "Mighty Leaf 30ct",
-      "file": "ml_sampler30.json"
+      "file": "ml_sampler30.json",
+      "group": "Mighty Leaf"
     },
     {
       "key": "senseo",
@@ -135,7 +144,47 @@
       "asin": "B00WEKKQ8A",
       "name": "Senseo Classic Medium Roast Pods (family also covers B00J70FP0E 48ct)",
       "short": "Senseo Classic 144ct",
-      "file": "senseo.json"
+      "file": "senseo.json",
+      "group": "Senseo",
+      "family": [
+        "B000L0YV6I",
+        "B000P3640W",
+        "B005Q89JEY",
+        "B00904PRLO",
+        "B009E8U4YG",
+        "B009E8UC1Q",
+        "B009E8UCNY",
+        "B00AFB1DKK",
+        "B00AFGOPYQ",
+        "B00AFGTJGA",
+        "B00HH85KIK",
+        "B00HLJHKJC",
+        "B00HSJ835U",
+        "B00J70FP0E",
+        "B00J70FP5O",
+        "B00J70FP6S",
+        "B00JZMUUH2",
+        "B00L3E5FC0",
+        "B00L3ET6A2",
+        "B00L40UONS",
+        "B00SYO0N5G",
+        "B00XT3BOUU",
+        "B01MTKKON7",
+        "B06WRTY7ZV",
+        "B086DBKCGJ",
+        "B08QCJ2725",
+        "B08QCJRV59",
+        "B08QCXQ5HV",
+        "B0937CWZGC",
+        "B0BRD2SH38",
+        "B0C1ZGZK2C",
+        "B0C49YL7M3",
+        "B0C49YWZ8Z",
+        "B0C4B1ZPVX",
+        "B0C4B45B47",
+        "B0C8JN7JT2",
+        "B00904PRY6"
+      ]
     },
     {
       "key": "pelecom",
@@ -143,7 +192,8 @@
       "asin": "B0DD4CWPW2",
       "name": "Pelecom Coffee Machine — Senseo-Pod Compatible",
       "short": "Pelecom Machine",
-      "file": "pelecom.json"
+      "file": "pelecom.json",
+      "group": "Senseo"
     }
   ],
   "monthly": {

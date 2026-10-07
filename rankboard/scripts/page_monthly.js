@@ -288,7 +288,7 @@ function detail(){
 // radar of its variation family (siblings are named in the product name).
 const ASINMAP={};
 D.products.forEach((p,i)=>{ if(p.asin) ASINMAP[p.asin]={i,via:null};
-  (p.name.match(/B0[A-Z0-9]{8}/g)||[]).forEach(a=>{ if(!ASINMAP[a]) ASINMAP[a]={i,via:p.asin}; }); });
+  (p.name.match(/B0[A-Z0-9]{8}/g)||[]).concat(p.family||[]).forEach(a=>{ if(!ASINMAP[a]) ASINMAP[a]={i,via:p.asin}; }); });
 document.getElementById('asins').innerHTML=Object.entries(ASINMAP)
   .map(([a,v])=>'<option value="'+a+'">'+D.products[v.i].short+(v.via?' (family of '+v.via+')':'')+'</option>').join('');
 function asinSearch(){

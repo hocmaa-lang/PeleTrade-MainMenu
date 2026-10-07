@@ -54,6 +54,8 @@ body{background:var(--bg);color:var(--ink);
 h1{font-size:25px;letter-spacing:-.02em}
 .sub{color:var(--ink2);font-size:13.5px;margin-top:3px}
 .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:20px 0 14px}
+.bar .grp{align-self:center;margin:0 1px 0 12px;font:600 10px/1 Archivo,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);opacity:.8}
+.bar .grp:first-of-type{margin-left:6px}
 button,select,input{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);
   border:1px solid var(--line);border-radius:7px;padding:7px 13px;cursor:pointer}
 button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
@@ -123,7 +125,17 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 </div>
 <div class="bar">
   <button data-p="all" class="on">All products</button>
-  ${P.products.map(p => `<button data-p="${p.key}">${p.short}</button>`).join('')}
+  ${(() => {
+    // Cards carry an optional group; the bar prints each group once, in config
+    // order, so a line with several ASINs reads as one block rather than a run
+    // of unrelated buttons.
+    let last = null;
+    return P.products.map(p => {
+      const head = p.group && p.group !== last ? `<span class="grp">${p.group}</span>` : '';
+      last = p.group || last;
+      return head + `<button data-p="${p.key}">${p.short}</button>`;
+    }).join('');
+  })()}
   <input id="q" placeholder="filter keywords…">
   <select id="sort">
     <option value="sv">Sort: search volume</option>
@@ -208,7 +220,9 @@ const ASINRE=/B0[A-Z0-9]{8}/g;
 const ASINMAP={};   // asin -> {pk, via}  (via = the radar's own ASIN when reached through the family)
 DATA.products.forEach(p=>{
   if(p.asin) ASINMAP[p.asin]={pk:p.key,via:null,pn:p.short};
-  (p.name.match(ASINRE)||[]).forEach(a=>{ if(!ASINMAP[a]) ASINMAP[a]={pk:p.key,via:p.asin,pn:p.short}; });
+  // Siblings named in the title, plus an explicit family list for lines whose
+  // variation family is too large to spell out in a product name.
+  (p.name.match(ASINRE)||[]).concat(p.family||[]).forEach(a=>{ if(!ASINMAP[a]) ASINMAP[a]={pk:p.key,via:p.asin,pn:p.short}; });
 });
 document.getElementById('asins').innerHTML=Object.entries(ASINMAP)
   .map(([a,v])=>'<option value="'+a+'">'+v.pn+(v.via?' (family of '+v.via+')':'')+'</option>').join('');
