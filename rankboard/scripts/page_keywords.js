@@ -129,7 +129,8 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
     <option value="sv">Sort: search volume</option>
     <option value="best">Sort: best rank</option>
     <option value="now">Sort: latest rank</option>
-    <option value="move">Sort: biggest move</option>
+    <option value="move">Sort: biggest gain</option>
+    <option value="drop">Sort: biggest drop</option>
   </select>
   <span class="spacer"></span><span class="count" id="cnt"></span>
 </div>
@@ -234,7 +235,10 @@ function render(){
   let list=ALL.filter(r=>(filt==='all'||r.pk===filt)&&r.days>0&&asinMatch(r.pk)
     &&(!q||r.kw.toLowerCase().includes(q)));
   const key={sv:r=>-r.sv,best:r=>r.best==null?999:r.best,now:r=>r.end==null?999:r.end,
-             move:r=>r.delta==null?999:r.delta};
+             move:r=>r.delta==null?999:r.delta,
+             // Mirror of move. Unranked keywords keep sorting last, not first,
+             // so "biggest drop" shows real falls rather than missing data.
+             drop:r=>r.delta==null?999:-r.delta};
   list.sort((a,b)=>key[sort](a)-key[sort](b));
   if(aq&&!list.length&&Object.keys(ASINMAP).some(a=>a.includes(aq)))
     document.getElementById('asinnote').innerHTML+=' <b>No keyword has ranked for it in this window yet</b>'+

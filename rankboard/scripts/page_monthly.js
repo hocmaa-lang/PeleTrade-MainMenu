@@ -178,7 +178,7 @@ svg text{fill:var(--ink3);font-size:11px}
 <div class="card"><div class="chart"><svg id="chart" width="100%" height="220" role="img" aria-label="Keywords by rank band per month"></svg></div>
 <div class="legend"><span><i style="background:var(--r2)"></i>Top 10</span><span><i style="background:var(--r4)"></i>11–50</span><span><i style="background:var(--r5)"></i>51–100</span></div></div>
 <div class="bar" style="margin-top:16px"><span class="lbl">Keywords</span>
-  <select id="sort"><option value="sv">Sort: search volume</option><option value="imp">Sort: most improved</option>
+  <select id="sort"><option value="sv">Sort: search volume</option><option value="imp">Sort: most improved</option><option value="dec">Sort: most declined</option>
   <option value="now">Sort: best rank now</option></select>
   <button id="onlyr" class="on">Only keywords that ranked</button></div>
 <div class="card"><div class="scroll"><table id="kt"></table></div></div>
@@ -274,6 +274,8 @@ function detail(){
   const imp=r=>{const fi=firstIdx(r);if(fi<0)return null;const a=r.m[fi][0],b=now(r);return (b==null?101:b)-a;};
   if(onlyR)rows=rows.filter(r=>r.m.some(v=>v&&v[0]!=null));
   if(ksort==='imp')rows.sort((a,b)=>(imp(a)??999)-(imp(b)??999));
+  // Descending, but keywords with no measurable change still sort last.
+  else if(ksort==='dec')rows.sort((a,b)=>(imp(b)??-999)-(imp(a)??-999));
   else if(ksort==='now')rows.sort((a,b)=>(now(a)??999)-(now(b)??999));
   let h='<thead><tr><th>Keyword</th><th class="n">Search vol</th>'+MON.map(m=>'<th class="m">'+m.label+(m.mtd?'<span class="mtd">to date</span>':'')+'</th>').join('')+'<th class="m">Change</th></tr></thead><tbody>';
   for(const r of rows){h+='<tr><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+r.kw+'</td><td class="n">'+r.sv.toLocaleString()+'</td>'+
