@@ -61,25 +61,9 @@
       "key": "lav_blue",
       "radarId": "d38cbea7-a550-4158-93ce-447ce7b63fdd",
       "asin": "B09MJGWDXD",
-      "name": "Lavazza Blue Capsules Variety Pack — 100 Count (family also covers B08P7FSLBZ · B0932V5XXS · B09NNQSYNX)",
+      "name": "Lavazza Blue Capsules Variety Pack — 100 Count",
       "short": "Lavazza Blue 100ct",
       "file": "lav_blue.json"
-    },
-    {
-      "key": "lav_blue_25",
-      "radarId": "fae9ab4d-a554-4365-9571-cd1b28b78f0b",
-      "asin": "B093BQRDML",
-      "name": "Lavazza Blue Capsules Variety Pack — 100 Count, 25 Pods Each",
-      "short": "Lavazza Blue 4×25",
-      "file": "lav_blue_25.json"
-    },
-    {
-      "key": "lav_blue_20",
-      "radarId": "ca20e8d1-1ba8-4124-a77c-de1f9527d9ac",
-      "asin": "B09N7SQBPZ",
-      "name": "Lavazza Blue Capsules Variety Pack — 100 Count, 20 Pods Each",
-      "short": "Lavazza Blue 5×20",
-      "file": "lav_blue_20.json"
     },
     {
       "key": "lav_intenso",
