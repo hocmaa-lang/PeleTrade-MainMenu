@@ -166,6 +166,18 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
     <th class="n">First</th><th class="n">Now</th><th class="n">Best</th><th class="n">Move</th>
   </tr></thead><tbody id="rows"></tbody></table></div></div>
 
+<div class="note" id="noscriptwarn" translate="no" style="border-left-color:var(--bad)">
+  <b>⚠ This table did not load.</b> The page's chrome is here but the rows were never
+  drawn, which means the script that builds them did not finish. The usual causes are a
+  browser extension that strips scripts in embedded frames (ad-block, privacy or reader
+  modes) or a page translator. Try the same link in a private window, or disable
+  extensions for this site and reload.
+  <span dir="rtl" lang="he" style="display:block;margin-top:4px">הטבלה לא נטענה. מסגרת הדף
+  קיימת אבל השורות לא צוירו — כלומר הסקריפט שבונה אותן לא הסתיים. הסיבות הרגילות הן תוסף
+  דפדפן שחוסם סקריפטים במסגרות מוטמעות (חוסם פרסומות, פרטיות, מצב קריאה) או מתרגם דפים.
+  נסה את אותו קישור בחלון פרטי, או כבה תוספים לאתר הזה ורענן.</span>
+</div>
+
 <div class="note"><b>Hatched cells are days the tracker did not run</b> — every keyword
 returned 101 that day, which is the signature of a crawl that never fired, not of a
 product leaving Amazon. They are drawn differently from a plain "not ranking" cell on
@@ -258,6 +270,9 @@ function render(){
     document.getElementById('asinnote').innerHTML+=' <b>No keyword has ranked for it in this window yet</b>'+
       ' — a newly created radar fills in after its first crawls.';
   LAST=list.length;
+  // Proof the script got this far AND produced something: only then is the
+  // static warning wrong and safe to remove.
+  { const w=document.getElementById('noscriptwarn'); if(w) w.style.display = list.length ? 'none' : 'block'; }
   document.getElementById('cnt').textContent=list.length+' keywords ranking at least once';
   document.getElementById('rows').innerHTML=list.map(r=>{
     const cells=r.series.map((v,i)=>{

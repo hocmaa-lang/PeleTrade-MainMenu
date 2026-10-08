@@ -58,7 +58,11 @@ button:disabled{opacity:.55;cursor:progress}
 <script>
 const SALT="${salt.toString('base64')}",IV="${iv.toString('base64')}",
       DATA="${b64}",ITER=${ITER};
-const b2a=b=>Uint8Array.from(atob(b),c=>c.charCodeAt(0));
+// Decode with a plain loop over a preallocated buffer. Uint8Array.from on a
+// string goes through the iterator protocol and calls the mapper once per byte:
+// on a 1 MB payload that is ~1,000,000 calls on the main thread, which freezes
+// the gate on 'Decrypting…' for many seconds and looks like a dead page.
+const b2a=b=>{const s=atob(b),n=s.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=s.charCodeAt(i);return u;};
 document.getElementById('f').addEventListener('submit',async ev=>{
   ev.preventDefault();
   const btn=document.getElementById('b'),err=document.getElementById('e');
