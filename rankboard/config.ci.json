@@ -94,6 +94,42 @@
       "group": "Lavazza Expert"
     },
     {
+      "key": "lav_gran",
+      "radarId": "4ea369de-c03c-435b-abc0-ea60c968a19c",
+      "asin": "B0H1XH7CVM",
+      "name": "Lavazza Expert Gran Aroma Coffee Pods — 72 Count",
+      "short": "Expert Gran Aroma 72ct",
+      "file": "lav_gran.json",
+      "group": "Lavazza Expert"
+    },
+    {
+      "key": "lav_exp30",
+      "radarId": "7da96486-ca0e-4f4b-89cd-7fb461ae775a",
+      "asin": "B0C5DQFTCB",
+      "name": "Lavazza Expert Coffee Pods — 30 Count Mixed Pack (family also covers B0932VS6F6)",
+      "short": "Expert 30ct Mixed",
+      "file": "lav_exp30.json",
+      "group": "Lavazza Expert"
+    },
+    {
+      "key": "lav_crema_esp",
+      "radarId": "3b0c81c5-a15a-4136-a5a5-1c3b42add965",
+      "asin": "B0H1XQ9GJ9",
+      "name": "Lavazza Super Crema + Espresso — 40 Count",
+      "short": "Super Crema + Espresso 40ct",
+      "file": "lav_crema_esp.json",
+      "group": "Lavazza Expert"
+    },
+    {
+      "key": "lav_crema_cos",
+      "radarId": "b35e591e-211c-44a0-a8f3-e69fa98c78c9",
+      "asin": "B0H1X1FPPY",
+      "name": "Lavazza Super Crema + Costiera — 40 Count",
+      "short": "Super Crema + Costiera 40ct",
+      "file": "lav_crema_cos.json",
+      "group": "Lavazza Expert"
+    },
+    {
       "key": "lav_kcup",
       "radarId": "78c84c61-a350-4608-a4f9-2ecc3cf08c1a",
       "asin": "B08TRVVCTB",
@@ -151,6 +187,7 @@
         "B000P3640W",
         "B005Q89JEY",
         "B00904PRLO",
+        "B00904PRY6",
         "B009E8U4YG",
         "B009E8UC1Q",
         "B009E8UCNY",
@@ -168,6 +205,7 @@
         "B00L3ET6A2",
         "B00L40UONS",
         "B00SYO0N5G",
+        "B00SYO2M0U",
         "B00XT3BOUU",
         "B01MTKKON7",
         "B06WRTY7ZV",
@@ -182,8 +220,7 @@
         "B0C49YWZ8Z",
         "B0C4B1ZPVX",
         "B0C4B45B47",
-        "B0C8JN7JT2",
-        "B00904PRY6"
+        "B0C8JN7JT2"
       ]
     },
     {
@@ -194,6 +231,33 @@
       "short": "Pelecom Machine",
       "file": "pelecom.json",
       "group": "Senseo"
+    },
+    {
+      "key": "mach_mini1",
+      "radarId": "6ef4725a-ee9a-41ec-a989-de58d9a998bd",
+      "asin": "B0DPXHKVN9",
+      "name": "Lavazza Mini Machine",
+      "short": "Mini Machine",
+      "file": "mach_mini1.json",
+      "group": "Machines"
+    },
+    {
+      "key": "mach_plus1",
+      "radarId": "6d174646-f1e5-4933-ad90-9c21fd509027",
+      "asin": "B0DPXK1S9M",
+      "name": "Lavazza Plus Machine",
+      "short": "Plus Machine",
+      "file": "mach_plus1.json",
+      "group": "Machines"
+    },
+    {
+      "key": "mach_mini2",
+      "radarId": "5e9ef009-c95d-492c-8476-e1967e066ecd",
+      "asin": "B0DPXHLTGZ",
+      "name": "Lavazza Mini Machine (2)",
+      "short": "Mini Machine 2",
+      "file": "mach_mini2.json",
+      "group": "Machines"
     }
   ],
   "monthly": {
