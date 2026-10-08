@@ -54,6 +54,15 @@ body{background:var(--bg);color:var(--ink);
 h1{font-size:25px;letter-spacing:-.02em}
 .sub{color:var(--ink2);font-size:13.5px;margin-top:3px}
 .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:20px 0 14px}
+/* Marked rows: the six per product worth watching. Light blue, legible in both
+   themes, and never so strong that it hides a rank colour. */
+tr.mk td{background:#dbeafe}
+tr.mk td:first-child{box-shadow:inset 3px 0 0 #2a78d6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) tr.mk td{background:#16304d}}
+:root[data-theme="dark"] tr.mk td{background:#16304d}
+.mkpin{display:inline-block;margin-right:6px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2a78d6;vertical-align:1px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mkpin{color:#7fb2f0}}
+:root[data-theme="dark"] .mkpin{color:#7fb2f0}
 .bar .grp{align-self:center;margin:0 1px 0 12px;font:600 10px/1 Archivo,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);opacity:.8}
 .bar .grp:first-of-type{margin-left:6px}
 button,select,input{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);
@@ -220,8 +229,58 @@ const show=(e,h)=>{tt.innerHTML=h;tt.style.opacity=1;const r=tt.getBoundingClien
 const hide=()=>tt.style.opacity=0;
 
 // flatten every keyword of every product into one list
+// Six keywords per product are marked as the ones worth watching: the three
+// biggest that actually describe THIS product, and three long-tail ones.
+//
+// "Describes this product" is the whole point of the exercise. A term like
+// "espresso pods" carries 84,427 searches on the Blue 100ct card and is still
+// worthless as a marker: it describes the category, every rival ranks for it,
+// and moving on it says nothing about this listing. A term earns a mark only by
+// naming the brand or a trait that separates this ASIN from its siblings.
+const BRANDS=['lavazza','senseo','douwe','egberts','mighty leaf','pelecom','pelecafe','flavia','alterra','jacobs'];
+function traitsOf(p){
+  const t=[], s=((p.short||'')+' '+(p.name||'')).toLowerCase();
+  // Pack size as the shopper types it: "100ct" in our label, "100 count" in search.
+  // Doubled backslashes: this block is inside a template literal, so a single
+  // \\s reaches the browser as a bare "s" and the regex silently matches letters.
+  const n=s.match(/(\\d{2,3})\\s*ct\\b/)||s.match(/(\\d{2,3})\\s*count/);
+  if(n) t.push(n[1]+' count', n[1]+'ct', n[1]+' ct', n[1]+' pack');
+  for(const w of ['blue','expert','k-cup','kcup','classy','intenso','classico','gran aroma','dolcevita',
+                  'decaf','espresso dark','extra strong','strong','mocca','mild','crema','costiera',
+                  'sampler','organic','machine','pods 100'])
+    if(s.includes(w)) t.push(w);
+  return [...new Set(t)];
+}
+function relevant(kw,p,traits){
+  const k=kw.toLowerCase();
+  if(BRANDS.some(b=>k.includes(b))) return true;
+  return traits.some(t=>k.includes(t));
+}
+function pickMarks(p){
+  const traits=traitsOf(p);
+  // Only rows the table actually draws are candidates. The default view hides
+  // keywords that never ranked (days===0), and a mark on a hidden row is a mark
+  // the reader never sees — the six would quietly become three.
+  const rel=(p.rows||[]).filter(r=>r.days>0&&relevant(r.kw,p,traits));
+  const bySv=[...rel].sort((a,b)=>(b.sv||0)-(a.sv||0));
+  const top=bySv.slice(0,3).map(r=>r.kw);
+  // Long tail: four words or more, and not already marked. Ordered by volume so
+  // the three chosen are the ones with something to win, not merely the longest.
+  const tail=bySv.filter(r=>!top.includes(r.kw) && r.kw.trim().split(/\\s+/).length>=4).slice(0,3).map(r=>r.kw);
+  // If a product has fewer than three long phrases, fall back to the next
+  // relevant terms by volume rather than leaving the set short.
+  const fill=bySv.filter(r=>!top.includes(r.kw)&&!tail.includes(r.kw)).slice(0,3-tail.length).map(r=>r.kw);
+  return { top, tail:[...tail,...fill] };
+}
+const MARKS={};
+DATA.products.forEach(p=>{ MARKS[p.key]=pickMarks(p); });
+
 const ALL=[];
-DATA.products.forEach(p=>p.rows.forEach(r=>ALL.push({...r,pk:p.key,pn:p.short,
+DATA.products.forEach(p=>p.rows.forEach(r=>ALL.push({...r,
+  // NOT "mark": the row already carries p.mark (the crawl-gap stripe) later in
+  // this same literal, and the later key wins — which silently tagged every row.
+  kwMark: MARKS[p.key].top.includes(r.kw) ? 'top' : (MARKS[p.key].tail.includes(r.kw) ? 'tail' : null),
+  pk:p.key,pn:p.short,
   dates:p.dates,flags:p.flags,dow:p.dow,mark:p.mark,markCSS:markCSS(p.mark),
   cov:p.coverage.withData})));
 
@@ -287,7 +346,7 @@ function render(){
     const mv=r.delta==null?'<span class="fl">—</span>'
       :r.delta===0?'<span class="fl">0</span>'
       :r.delta<0?'<span class="up">▲ '+(-r.delta)+'</span>':'<span class="dn">▼ '+r.delta+'</span>';
-    return '<tr><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+r.kw+
+    return '<tr'+(r.kwMark?' class="mk"':'')+'><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+(r.kwMark?'<span class="mkpin" title="'+(r.kwMark==='top'?'Top volume for this product':'Long-tail, product specific')+'">'+(r.kwMark==='top'?'TOP':'TAIL')+'</span>':'')+r.kw+
       (filt==='all'||aq?'<div class="pr">'+r.pn+(PASIN[r.pk]?' · '+PASIN[r.pk]:'')+'</div>':'')+'</td>'+
       '<td class="n">'+r.sv.toLocaleString()+'</td>'+
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
