@@ -5,7 +5,16 @@ const fs = require('fs');
 // Shown on the page so a reader's screenshot says which template they are looking at
 // (a cached older copy vs. the current one). Bump it whenever the template changes;
 // it is deliberately NOT a timestamp, which would make every refresh look "changed".
-const TEMPLATE_VERSION = 'v2026-09-30d';
+const TEMPLATE_VERSION = 'v2026-10-08a';
+// The tick store. Both values are baked into the page and the page is then
+// encrypted, so they are readable only by someone who already has the password.
+// The token is a fine-grained PAT limited to this one repository with Contents
+// write — never a classic token, which would reach every repo on the account.
+const GH = {
+  repo: process.env.RANKBOARD_GH_REPO || 'hocmaa-lang/PeleTrade-MainMenu',
+  token: process.env.RANKBOARD_GH_TOKEN || '',
+  datakey: process.env.RANKBOARD_DATAKEY || '',
+};
 const P = JSON.parse(fs.readFileSync(process.argv[2] + '/payload.json', 'utf8'));
 
 // attach the per-day gap flags onto each product so the client can grey those columns
@@ -63,6 +72,15 @@ tr.mk td:first-child{box-shadow:inset 3px 0 0 #2a78d6}
 .mkpin{display:inline-block;margin-right:6px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2a78d6;vertical-align:1px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mkpin{color:#7fb2f0}}
 :root[data-theme="dark"] .mkpin{color:#7fb2f0}
+/* Tick column */
+th.ckh{width:34px;text-align:center;font-size:13px}
+td.ck{width:34px;text-align:center}
+td.ck input{width:15px;height:15px;cursor:pointer;accent-color:#2a78d6;margin:0}
+#savebar{position:fixed;right:14px;bottom:14px;z-index:60;padding:7px 12px;border-radius:8px;
+  font:500 12px Archivo,sans-serif;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink2);box-shadow:0 4px 14px rgba(0,0,0,.2);display:none}
+#savebar.on{display:block}
+#savebar.err{border-color:var(--bad);color:var(--bad)}
 .bar .grp{align-self:center;margin:0 1px 0 12px;font:600 10px/1 Archivo,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);opacity:.8}
 .bar .grp:first-of-type{margin-left:6px}
 button,select,input{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);
@@ -171,10 +189,11 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="card"><div class="scroll"><table>
   <thead><tr>
-    <th>Keyword</th><th class="n">Vol</th><th id="ruler">Rank each day →</th>
+    <th class="ckh" title="Tick to flag a keyword. Saved for everyone who opens this link.">✓</th><th>Keyword</th><th class="n">Vol</th><th id="ruler">Rank each day →</th>
     <th class="n">First</th><th class="n">Now</th><th class="n">Best</th><th class="n">Move</th>
   </tr></thead><tbody id="rows"></tbody></table></div></div>
 
+<div id="savebar"></div>
 <div class="note" id="noscriptwarn" translate="no" style="border-left-color:var(--bad)">
   <b>⚠ This table did not load.</b> The page's chrome is here but the rows were never
   drawn, which means the script that builds them did not finish. The usual causes are a
@@ -199,6 +218,10 @@ so a cell still reads as nothing but its rank.` : ''}</div>
 <div class="tt" id="tt"></div>
 <script>
 var BRAND=${JSON.stringify(P.teamName || P.brandTitle)};
+// Tick-store credentials, emitted INTO the page (the const above this file's
+// template is Node-side only). The page is sealed afterwards, so these live
+// inside the ciphertext and are readable only with the password.
+const GH=${JSON.stringify(GH)};
 (function(){var h=new Date().getHours();
   var g=h<12?'Good morning':(h<18?'Good afternoon':'Good evening');
   var el=document.getElementById('greet');
@@ -300,6 +323,10 @@ document.getElementById('asins').innerHTML=Object.entries(ASINMAP)
 const PASIN=Object.fromEntries(DATA.products.map(p=>[p.key,p.asin||'']));
 
 let filt='all',sort='sv',q='',aq='',LAST=0;
+// Declared here, not with the store below: render() runs before that block and
+// reads TICKS for every row — a later const leaves it in the temporal dead zone
+// and the whole table silently fails to draw.
+const TICKS={};
 function asinMatch(pk){
   if(!aq) return true;
   return Object.entries(ASINMAP).some(([a,v])=>v.pk===pk&&a.includes(aq));
@@ -346,7 +373,8 @@ function render(){
     const mv=r.delta==null?'<span class="fl">—</span>'
       :r.delta===0?'<span class="fl">0</span>'
       :r.delta<0?'<span class="up">▲ '+(-r.delta)+'</span>':'<span class="dn">▼ '+r.delta+'</span>';
-    return '<tr'+(r.kwMark?' class="mk"':'')+'><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+(r.kwMark?'<span class="mkpin" title="'+(r.kwMark==='top'?'Top volume for this product':'Long-tail, product specific')+'">'+(r.kwMark==='top'?'TOP':'TAIL')+'</span>':'')+r.kw+
+    const cid=r.pk+'||'+r.kw;
+    return '<tr'+(r.kwMark?' class="mk"':'')+'><td class="ck"><input type="checkbox" data-id="'+cid.replace(/"/g,'&quot;')+'"'+(TICKS[cid]?' checked':'')+'></td><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+(r.kwMark?'<span class="mkpin" title="'+(r.kwMark==='top'?'Top volume for this product':'Long-tail, product specific')+'">'+(r.kwMark==='top'?'TOP':'TAIL')+'</span>':'')+r.kw+
       (filt==='all'||aq?'<div class="pr">'+r.pn+(PASIN[r.pk]?' · '+PASIN[r.pk]:'')+'</div>':'')+'</td>'+
       '<td class="n">'+r.sv.toLocaleString()+'</td>'+
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
@@ -460,6 +488,94 @@ function diag(){
       :'משהו מחוץ לדף מחק את הטבלה ('+WIPES+' פעמים) והיא נבנתה מחדש. אם זה חוזר — כבה תוספים לאתר הזה (תרגום, קריאה, חוסם פרסומות) ורענן.')+'</span>';
 }
 diag();
+/* ------------------------------------------------------------------ ticks --
+   Shared state, not per-browser. Everyone who opens the link reads the same
+   state.json from the repo's "data" branch and writes back to it, so a tick
+   made here is a tick the client sees. The file is AES-GCM encrypted: the
+   branch is public, and an unencrypted list of what the agency is watching
+   would be readable by anyone who guessed the URL.
+
+   Writes carry the blob's sha. GitHub rejects a stale sha, which is exactly
+   the conflict signal needed when two people tick at once: on a 409 the state
+   is re-read, the local change re-applied, and the write retried.            */
+
+let TICKSHA = null, TICKTIMER = null, PENDING = false;
+
+function bar(msg, isErr){ const b=document.getElementById('savebar');
+  if(!b) return; b.textContent=msg; b.className='on'+(isErr?' err':'');
+  clearTimeout(bar._t); if(!isErr) bar._t=setTimeout(()=>{b.className='';},1600); }
+
+const GHAPI = 'https://api.github.com/repos/'+GH.repo+'/contents/state.json?ref=data';
+const GHPUT = 'https://api.github.com/repos/'+GH.repo+'/contents/state.json';
+const ghHead = () => ({Authorization:'Bearer '+GH.token, Accept:'application/vnd.github+json'});
+
+const b64b = b => { const s=atob(b), n=s.length, u=new Uint8Array(n); for(let i=0;i<n;i++)u[i]=s.charCodeAt(i); return u; };
+const bb64 = u => { let s=''; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); };
+let KEYP = null;
+function dkey(){ if(!KEYP) KEYP = crypto.subtle.importKey('raw', b64b(GH.datakey), 'AES-GCM', false, ['encrypt','decrypt']); return KEYP; }
+
+async function decState(blobB64){
+  const raw=b64b(blobB64), iv=raw.slice(0,12), body=raw.slice(12);
+  const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv}, await dkey(), body);
+  return JSON.parse(new TextDecoder().decode(clear));
+}
+async function encState(obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, await dkey(),
+    new TextEncoder().encode(JSON.stringify(obj))));
+  const out=new Uint8Array(iv.length+ct.length); out.set(iv); out.set(ct,iv.length);
+  return bb64(out);
+}
+
+async function loadTicks(quiet){
+  if(!GH.token||!GH.datakey) return;
+  try{
+    const r=await fetch(GHAPI+'&t='+Date.now(),{headers:ghHead(),cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json(); TICKSHA=j.sha;
+    const st=await decState(atob(j.content.replace(/\\n/g,'')));
+    const next=st.marks||{};
+    // Do not stamp over a tick the reader just made and that is still in flight.
+    if(!PENDING){
+      for(const k of Object.keys(TICKS)) delete TICKS[k];
+      Object.assign(TICKS,next);
+      document.querySelectorAll('td.ck input').forEach(c=>{ c.checked=!!TICKS[c.dataset.id]; });
+    }
+  }catch(e){ if(!quiet) bar('Could not read saved ticks',true); }
+}
+
+async function saveTicks(){
+  if(!GH.token||!GH.datakey){ bar('Saving is not configured',true); return; }
+  PENDING=true; bar('Saving…');
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      const content=btoa(await encState({marks:TICKS,_saved:new Date().toISOString()}));
+      const r=await fetch(GHPUT,{method:'PUT',headers:{...ghHead(),'Content-Type':'application/json'},
+        body:JSON.stringify({message:'ticks '+new Date().toISOString(),content,branch:'data',sha:TICKSHA})});
+      if(r.status===409||r.status===422){ await loadTicksForMerge(); continue; }
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const j=await r.json(); TICKSHA=j.content.sha; PENDING=false; bar('Saved'); return;
+    }catch(e){ if(attempt===2){ PENDING=false; bar('Not saved — try again',true); return; } }
+  }
+  PENDING=false;
+}
+// On a conflict keep THIS reader's ticks and layer them over whatever arrived,
+// rather than discarding either side.
+async function loadTicksForMerge(){
+  const mine={...TICKS};
+  PENDING=false; await loadTicks(true); PENDING=true;
+  Object.assign(TICKS,mine);
+}
+
+document.addEventListener('change',e=>{
+  const c=e.target.closest&&e.target.closest('td.ck input'); if(!c) return;
+  const id=c.dataset.id;
+  if(c.checked) TICKS[id]=true; else delete TICKS[id];
+  clearTimeout(TICKTIMER); TICKTIMER=setTimeout(saveTicks,400);
+});
+loadTicks(true);
+setInterval(()=>loadTicks(true),20000);
+
 </script></body></html>`;
 fs.writeFileSync(process.argv[2] + '/keywords.html', html);
 console.log('keywords.html', fs.statSync(process.argv[2] + '/keywords.html').size, 'bytes');

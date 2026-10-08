@@ -55,6 +55,11 @@ jobs:
         env:
           DATADIVE_API_KEY: ${{ secrets.DATADIVE_API_KEY }}
           RANKBOARD_PELETRADE_PASS: ${{ secrets.RANKBOARD_PELETRADE_PASS }}
+          # Baked into the page so the tick column can read and write the shared
+          # state. Without them the daily rebuild would publish a board whose
+          # checkboxes silently save nowhere.
+          RANKBOARD_GH_TOKEN: ${{ secrets.RANKBOARD_GH_TOKEN }}
+          RANKBOARD_DATAKEY: ${{ secrets.RANKBOARD_DATAKEY }}
         run: |
           node rankboard/scripts/refresh.js rankboard/config.ci.json --push \
             ${{ inputs.force && '--force' || '' }}
