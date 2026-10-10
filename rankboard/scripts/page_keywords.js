@@ -5,7 +5,13 @@ const fs = require('fs');
 // Shown on the page so a reader's screenshot says which template they are looking at
 // (a cached older copy vs. the current one). Bump it whenever the template changes;
 // it is deliberately NOT a timestamp, which would make every refresh look "changed".
-const TEMPLATE_VERSION = 'v2026-10-08a';
+const TEMPLATE_VERSION = 'v2026-10-10a';
+// Paid metrics per keyword. Optional: a board without the file simply shows no
+// ads column, rather than failing to build.
+// argv[2] is the build/out dir, so the file sits one level up beside config.json.
+let ADS = { keywords: {} };
+try { ADS = JSON.parse(fs.readFileSync(process.argv[2] + '/../ads30d.json', 'utf8')); }
+catch { /* no paid data for this board */ }
 // The tick store. Both values are baked into the page and the page is then
 // encrypted, so they are readable only by someone who already has the password.
 // The token is a fine-grained PAT limited to this one repository with Contents
@@ -81,6 +87,15 @@ td.ck input{width:15px;height:15px;cursor:pointer;accent-color:#2a78d6;margin:0}
   color:var(--ink2);box-shadow:0 4px 14px rgba(0,0,0,.2);display:none}
 #savebar.on{display:block}
 #savebar.err{border-color:var(--bad);color:var(--bad)}
+/* Paid column. ACOS is coloured against a 30% line — above it the term is
+   buying sales at a cost most of this catalogue cannot carry. */
+th.adsh{white-space:nowrap}
+td.ads{white-space:nowrap;font-size:11.5px;line-height:1.35}
+td.ads .co{color:var(--ink2)}
+td.ads .ac{font-weight:600}
+td.ads .hi{color:var(--bad)}
+td.ads .lo{color:var(--good)}
+td.ads .mt{display:block;font-size:9.5px;letter-spacing:.06em;color:var(--ink2);opacity:.75}
 .bar .grp{align-self:center;margin:0 1px 0 12px;font:600 10px/1 Archivo,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);opacity:.8}
 .bar .grp:first-of-type{margin-left:6px}
 button,select,input{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);
@@ -189,7 +204,7 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="card"><div class="scroll"><table>
   <thead><tr>
-    <th class="ckh" title="Tick to flag a keyword. Saved for everyone who opens this link.">✓</th><th>Keyword</th><th class="n">Vol</th><th id="ruler">Rank each day →</th>
+    <th class="ckh" title="Tick to flag a keyword. Saved for everyone who opens this link.">✓</th><th>Keyword</th><th class="n">Vol</th><th class="n adsh" title="Paid search, last 30 days: clicks · orders · ACOS. Blank means this exact term is not a bid keyword in the data we hold.">Ads 30d</th><th id="ruler">Rank each day →</th>
     <th class="n">First</th><th class="n">Now</th><th class="n">Best</th><th class="n">Move</th>
   </tr></thead><tbody id="rows"></tbody></table></div></div>
 
@@ -222,6 +237,8 @@ var BRAND=${JSON.stringify(P.teamName || P.brandTitle)};
 // template is Node-side only). The page is sealed afterwards, so these live
 // inside the ciphertext and are readable only with the password.
 const GH=${JSON.stringify(GH)};
+const ADS=${JSON.stringify(ADS.keywords || {})};
+const ADSAS=${JSON.stringify(ADS._asof || '')};
 (function(){var h=new Date().getHours();
   var g=h<12?'Good morning':(h<18?'Good afternoon':'Good evening');
   var el=document.getElementById('greet');
@@ -377,6 +394,7 @@ function render(){
     return '<tr'+(r.kwMark?' class="mk"':'')+'><td class="ck"><input type="checkbox" data-id="'+cid.replace(/"/g,'&quot;')+'"'+(TICKS[cid]?' checked':'')+'></td><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+(r.kwMark?'<span class="mkpin" title="'+(r.kwMark==='top'?'Top volume for this product':'Long-tail, product specific')+'">'+(r.kwMark==='top'?'TOP':'TAIL')+'</span>':'')+r.kw+
       (filt==='all'||aq?'<div class="pr">'+r.pn+(PASIN[r.pk]?' · '+PASIN[r.pk]:'')+'</div>':'')+'</td>'+
       '<td class="n">'+r.sv.toLocaleString()+'</td>'+
+      '<td class="n ads">'+adsCell(r.kw)+'</td>'+
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
       '<td class="n">'+badge(r.start)+'</td><td class="n">'+badge(r.end)+'</td>'+
       '<td class="n">'+badge(r.best)+'</td><td class="n">'+mv+'</td></tr>';}).join('');
@@ -431,6 +449,17 @@ function ruler(){
     dow.map((w,i)=>'<span class="'+(mk&&mk[i]?'m':'')+'">'+DOWLTR[w]+'</span>').join('')+'</div>':'';
   document.getElementById('ruler').innerHTML='Rank each day \\u2192'+dows+'<div class="dates">'+
     d.map((x,i)=>'<span>'+((i%5===0||i===d.length-1)?x.slice(5):'')+'</span>').join('')+'</div>';
+}
+// Paid cell. Matching is on exact lowercase text: a bid on "lavazza pods" says
+// nothing measurable about the row for "lavazza coffee pods", so near-matches
+// are deliberately NOT filled in.
+function adsCell(kw){
+  const a=ADS[(kw||'').toLowerCase().trim()];
+  if(!a) return '<span class="fl">—</span>';
+  const cls=a.acos==null?'':(a.acos>30?' hi':' lo');
+  return '<span class="co">'+a.clicks+'c · '+a.orders+'o</span> '+
+    '<span class="ac'+cls+'">'+(a.acos==null?'—':a.acos.toFixed(0)+'%')+'</span>'+
+    '<span class="mt">'+(a.match||'')+'</span>';
 }
 function greet(){var h=new Date().getHours();
   var g=h<12?'Good morning':(h<18?'Good afternoon':'Good evening');

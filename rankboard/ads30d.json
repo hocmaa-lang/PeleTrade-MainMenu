@@ -1,0 +1,16 @@
+{
+  "_what": "Paid-search metrics per keyword, last 30 days. Matched to board rows by exact lowercase keyword text.",
+  "_source": "PPC Investment Guide.xlsx -> 'Recommended Actions' tab, 30 Sep 2026 snapshot. Transcribed from the Evidence column, which states the 30-day figures in prose.",
+  "_limits": "Only keywords the sheet names with a match type carry numbers; automatic targets do not name a term and are excluded. 'lavazza' BROAD appears in the sheet with no 30-day line and is therefore absent here rather than guessed at zero. This file is a stopgap: once Sellerboard MCP access returns, ppc_dashboard_table at keyword level replaces it wholesale and covers every bid term, refreshed daily.",
+  "_asof": "2026-09-30",
+  "_window": "30 days to 26 Sep 2026",
+  "keywords": {
+    "lavazza pods":           { "clicks": 80,  "orders": 25, "acos": 8.9,   "match": "EXACT" },
+    "douwe egberts":          { "clicks": 145, "orders": 36, "acos": 6.8,   "match": "BROAD" },
+    "tea":                    { "clicks": 320, "orders": 21, "acos": 42.1,  "match": "PHRASE" },
+    "tea bags":               { "clicks": 60,  "orders": 8,  "acos": 35.4,  "match": "EXACT" },
+    "coffee pods":            { "clicks": 78,  "orders": 7,  "acos": 84.7,  "match": "EXACT" },
+    "lavazza coffee k cups":  { "clicks": 103, "orders": 7,  "acos": 41.3,  "match": "EXACT" },
+    "lavazza nespresso pods": { "clicks": 86,  "orders": 3,  "acos": 105.5, "match": "EXACT" }
+  }
+}
