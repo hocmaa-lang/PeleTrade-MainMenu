@@ -392,7 +392,11 @@ function render(){
       :r.delta<0?'<span class="up">▲ '+(-r.delta)+'</span>':'<span class="dn">▼ '+r.delta+'</span>';
     const cid=r.pk+'||'+r.kw;
     return '<tr'+(r.kwMark?' class="mk"':'')+'><td class="ck"><input type="checkbox" data-id="'+cid.replace(/"/g,'&quot;')+'"'+(TICKS[cid]?' checked':'')+'></td><td class="kw" title="'+r.kw.replace(/"/g,'&quot;')+'">'+(r.kwMark?'<span class="mkpin" title="'+(r.kwMark==='top'?'Top volume for this product':'Long-tail, product specific')+'">'+(r.kwMark==='top'?'TOP':'TAIL')+'</span>':'')+r.kw+
-      (filt==='all'||aq?'<div class="pr">'+r.pn+(PASIN[r.pk]?' · '+PASIN[r.pk]:'')+'</div>':'')+'</td>'+
+      // The ASIN shows on every row, in every view. It used to be hidden the
+      // moment a single product was selected — exactly when the reader is most
+      // likely to be checking which listing they are looking at. Filtered to one
+      // product the name is the same on every row, so only the ASIN is printed.
+      '<div class="pr">'+((filt==='all'||aq)?r.pn+(PASIN[r.pk]?' · ':''):'')+(PASIN[r.pk]||'')+'</div></td>'+
       '<td class="n">'+r.sv.toLocaleString()+'</td>'+
       '<td class="n ads">'+adsCell(r.kw)+'</td>'+
       '<td class="strip"><div style="background-image:'+r.markCSS+'">'+cells+'</div></td>'+
