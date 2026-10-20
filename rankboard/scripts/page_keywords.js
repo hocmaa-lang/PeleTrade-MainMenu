@@ -5,7 +5,7 @@ const fs = require('fs');
 // Shown on the page so a reader's screenshot says which template they are looking at
 // (a cached older copy vs. the current one). Bump it whenever the template changes;
 // it is deliberately NOT a timestamp, which would make every refresh look "changed".
-const TEMPLATE_VERSION = 'v2026-10-10a';
+const TEMPLATE_VERSION = 'v2026-10-20a';
 // Paid metrics per keyword. Optional: a board without the file simply shows no
 // ads column, rather than failing to build.
 // argv[2] is the build/out dir, so the file sits one level up beside config.json.
@@ -25,6 +25,24 @@ const P = JSON.parse(fs.readFileSync(process.argv[2] + '/payload.json', 'utf8'))
 
 // attach the per-day gap flags onto each product so the client can grey those columns
 for (const p of P.products) p.flags = p.trend.map(t => t.gap ? 2 : (t.partial ? 1 : 0));
+
+// One date axis for every row. A radar created mid-window (Classy Plus, 1 Oct)
+// has a shorter series; drawn left-aligned under a ruler built from the first
+// product, its cells sat under the wrong dates and the ruler's last label hung
+// over blank space. Every product is re-indexed onto the board's dates by DATE,
+// and days before its radar existed get flag 3 ("not tracked yet").
+const AXIS = [...new Set([...(P.dates || []), ...P.products.flatMap(p => p.dates || [])])].sort();
+for (const p of P.products) {
+  const at = new Map((p.dates || []).map((d, i) => [d, i]));
+  if (p.dates && p.dates.length === AXIS.length && AXIS.every(d => at.has(d))) continue;
+  const idx = AXIS.map(d => at.has(d) ? at.get(d) : -1);
+  p.started = p.dates && p.dates.length ? p.dates[0] : null;
+  p.flags = idx.map(i => i < 0 ? 3 : p.flags[i]);
+  for (const r of p.rows || []) r.series = idx.map(i => i < 0 ? null : r.series[i]);
+  p.dow = AXIS.map(d => new Date(d + 'T00:00:00Z').getUTCDay());
+  p.mark = p.dow.map(w => (P.markDays || []).includes(w));
+  p.dates = AXIS;
+}
 
 // Marked days (e.g. Fri/Sat/Sun) are drawn as a column band BEHIND the cells rather
 // than as a change to any cell's own colour — the cell colour is the rank and must
@@ -140,6 +158,14 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
   border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:12.5px;
   box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:9;white-space:nowrap}
 .tt b{display:block}
+.tt::after{content:"";position:absolute;left:var(--ax,50%);top:100%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:var(--line)}
+.tt.below::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:var(--line)}
+/* hovered-day label in the ruler: every span carries its date, shown only for the lit column */
+#ruler .dates span,#ruler .dows span{position:relative}
+#ruler .dates span::after{content:attr(data-d);position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);opacity:0;background:var(--ink);color:var(--surface);
+  border-radius:3px;padding:1px 4px;font-weight:700;white-space:nowrap;pointer-events:none;z-index:2}
 .note{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--ink3);
   border-radius:8px;padding:11px 15px;margin:16px 0 0;font-size:13px;color:var(--ink2)}
 .note b{color:var(--ink)}
@@ -263,10 +289,27 @@ const band=r=>r==null?'var(--none)':r<=3?'var(--r1)':r<=10?'var(--r2)':r<=20?'va
 const badge=r=>r==null?'<span class="fl">—</span>'
   :'<span class="badge" style="background:'+band(r)+';color:'+(r<=20?'#fff':'var(--ink)')+'">'+r+'</span>';
 const tt=document.getElementById('tt');
-const show=(e,h)=>{tt.innerHTML=h;tt.style.opacity=1;const r=tt.getBoundingClientRect();
-  tt.style.left=Math.min(e.clientX+13,innerWidth-r.width-8)+'px';
-  tt.style.top=Math.max(e.clientY-r.height-11,6)+'px';};
-const hide=()=>tt.style.opacity=0;
+// The tooltip is anchored to the hovered CELL, centred above it with a pointer, not
+// to the cursor. Cursor-anchored, it sat to the right of the last column — over the
+// empty gutter — and a client read "20.10" as a label for that blank space.
+// The hovered day is also lit as a whole column (every row + the date ruler) by
+// rewriting ONE nth-child rule, so no per-cell work happens on mousemove.
+const colhl=document.createElement('style');document.head.appendChild(colhl);
+let HCOL=-1;
+const lightCol=n=>{if(n===HCOL)return;HCOL=n;colhl.textContent=n<1?'':
+  '.strip div i.c:nth-child('+n+'){outline:2px solid var(--ink);outline-offset:1px;position:relative;z-index:1}'+
+  '#ruler .dates span:nth-child('+n+')::after,#ruler .dows span:nth-child('+n+')::after{opacity:1}'+
+  '#ruler .dates span:nth-child('+n+'){color:transparent}';};
+const show=(e,h,c)=>{tt.innerHTML=h;tt.style.opacity=1;const r=tt.getBoundingClientRect();
+  const b=c.getBoundingClientRect();
+  let x=b.left+b.width/2-r.width/2;x=Math.max(6,Math.min(x,innerWidth-r.width-6));
+  const above=b.top-r.height-9>=6;
+  tt.classList.toggle('below',!above);
+  tt.style.left=x+'px';
+  tt.style.top=(above?b.top-r.height-9:b.bottom+9)+'px';
+  tt.style.setProperty('--ax',(b.left+b.width/2-x)+'px');
+  lightCol([...c.parentNode.children].indexOf(c)+1);};
+const hide=()=>{tt.style.opacity=0;lightCol(-1);};
 
 // flatten every keyword of every product into one list
 // Six keywords per product are marked as the ones worth watching: the three
@@ -320,7 +363,7 @@ DATA.products.forEach(p=>p.rows.forEach(r=>ALL.push({...r,
   // NOT "mark": the row already carries p.mark (the crawl-gap stripe) later in
   // this same literal, and the later key wins — which silently tagged every row.
   kwMark: MARKS[p.key].top.includes(r.kw) ? 'top' : (MARKS[p.key].tail.includes(r.kw) ? 'tail' : null),
-  pk:p.key,pn:p.short,
+  pk:p.key,pn:p.short,started:p.started||null,
   dates:p.dates,flags:p.flags,dow:p.dow,mark:p.mark,markCSS:markCSS(p.mark),
   cov:p.coverage.withData})));
 
@@ -380,10 +423,13 @@ function render(){
   document.getElementById('rows').innerHTML=list.map(r=>{
     const cells=r.series.map((v,i)=>{
       const f=r.flags[i];
-      const st=f===2
+      const st=f===3
+        ? 'background:transparent;box-shadow:inset 0 0 0 1px rgba(128,128,128,.12)'
+        : f===2
         ? 'background:var(--gap);background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(128,128,128,.5) 2px,rgba(128,128,128,.5) 3px)'
         : 'background:'+band(v)+(f===1?';opacity:.55':'');
-      const lbl=f===2?'no crawl':(v==null?'not ranking':'rank '+v+(f===1?' · partial crawl':''));
+      const lbl=f===3?'not tracked yet'+(r.started?' (tracker started '+r.started.slice(8)+'.'+r.started.slice(5,7)+')':'')
+        :f===2?'no crawl':(v==null?'not ranking':'rank '+v)+(f===1?' · partial crawl':'');
       const dn=r.dow?DOWNAME[r.dow[i]]:'';
       const hd=dn?r.dates[i]+' · '+dn:r.dates[i];
       return '<i class="c" style="'+st+'" data-h="<b>'+hd+'</b>'+lbl+'"></i>';}).join('');
@@ -437,7 +483,7 @@ document.getElementById('q').addEventListener('input',e=>{q=e.target.value.toLow
 // 400 keywords x 30 days, rebuilt per click. A client reported the view "stuck" and
 // unclickable; the per-cell binding is the part that scales with the data.
 (function(){const rows=document.getElementById('rows');
-  rows.addEventListener('mousemove',e=>{const c=e.target.closest&&e.target.closest('.c');if(c)show(e,c.dataset.h);else hide();});
+  rows.addEventListener('mousemove',e=>{const c=e.target.closest&&e.target.closest('.c');if(c)show(e,c.dataset.h,c);else hide();});
   rows.addEventListener('mouseleave',hide);})();
 document.getElementById('asin').addEventListener('input',e=>{aq=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(aq&&filt!=='all'){filt='all';document.querySelectorAll('.bar button').forEach(x=>x.classList.toggle('on',x.dataset.p==='all'));}
@@ -452,7 +498,7 @@ function ruler(){
   const dows=dow?'<div class="dows" style="background-image:'+markCSS(mk)+'">'+
     dow.map((w,i)=>'<span class="'+(mk&&mk[i]?'m':'')+'">'+DOWLTR[w]+'</span>').join('')+'</div>':'';
   document.getElementById('ruler').innerHTML='Rank each day \\u2192'+dows+'<div class="dates">'+
-    d.map((x,i)=>'<span>'+((i%5===0||i===d.length-1)?x.slice(5):'')+'</span>').join('')+'</div>';
+    d.map((x,i)=>'<span data-d="'+x.slice(8)+'.'+x.slice(5,7)+'">'+((i%5===0||i===d.length-1)?x.slice(5):'')+'</span>').join('')+'</div>';
 }
 // Paid cell. Matching is on exact lowercase text: a bid on "lavazza pods" says
 // nothing measurable about the row for "lavazza coffee pods", so near-matches
