@@ -80,11 +80,19 @@ for (const p of PRODUCTS) {
       days: seen.length, total: series.length,
       // delta: negative = improved (moved toward 1). null when either edge is unranked.
       delta: (startR != null && endR != null) ? endR - startR : null,
-      series: series.map(s => s.r),
+      // Placed on the product's date axis below, BY DATE. A keyword added to the
+      // radar mid-window (29 Sep curation) has a shorter ranks array; emitted
+      // as-is it was drawn left-aligned and every cell sat under the wrong day.
+      _byDate: new Map(series.map(s => [s.d, s.r])),
+      from: series.length ? series[0].d : null,
     });
   }
 
   const dates = Object.keys(byDate).sort();
+  for (const r of rows) {
+    r.series = dates.map(d => (r._byDate.has(d) ? r._byDate.get(d) : null));
+    delete r._byDate;
+  }
 
   // A day where EVERY tracked keyword reads 101 is a crawl that did not run, not a
   // day the product vanished from Amazon. Verified in the raw payload: gap days are

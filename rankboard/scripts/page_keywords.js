@@ -5,7 +5,7 @@ const fs = require('fs');
 // Shown on the page so a reader's screenshot says which template they are looking at
 // (a cached older copy vs. the current one). Bump it whenever the template changes;
 // it is deliberately NOT a timestamp, which would make every refresh look "changed".
-const TEMPLATE_VERSION = 'v2026-10-20a';
+const TEMPLATE_VERSION = 'v2026-10-25a';
 // Paid metrics per keyword. Optional: a board without the file simply shows no
 // ads column, rather than failing to build.
 // argv[2] is the build/out dir, so the file sits one level up beside config.json.
@@ -422,13 +422,16 @@ function render(){
   document.getElementById('cnt').textContent=list.length+' keywords ranking at least once';
   document.getElementById('rows').innerHTML=list.map(r=>{
     const cells=r.series.map((v,i)=>{
-      const f=r.flags[i];
+      // Per-row: a keyword added to the radar after the window opened.
+      const late=r.from&&r.dates[i]<r.from&&r.flags[i]!==3;
+      const f=late?3:r.flags[i];
       const st=f===3
         ? 'background:transparent;box-shadow:inset 0 0 0 1px rgba(128,128,128,.12)'
         : f===2
         ? 'background:var(--gap);background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(128,128,128,.5) 2px,rgba(128,128,128,.5) 3px)'
         : 'background:'+band(v)+(f===1?';opacity:.55':'');
-      const lbl=f===3?'not tracked yet'+(r.started?' (tracker started '+r.started.slice(8)+'.'+r.started.slice(5,7)+')':'')
+      const lbl=f===3?'not tracked yet'+(late?' (keyword added '+r.from.slice(8)+'.'+r.from.slice(5,7)+')'
+        :r.started?' (tracker started '+r.started.slice(8)+'.'+r.started.slice(5,7)+')':'')
         :f===2?'no crawl':(v==null?'not ranking':'rank '+v)+(f===1?' · partial crawl':'');
       const dn=r.dow?DOWNAME[r.dow[i]]:'';
       const hd=dn?r.dates[i]+' · '+dn:r.dates[i];
