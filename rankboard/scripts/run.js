@@ -105,6 +105,20 @@ if (WANT_SEAL) {
     [{ src: 'dashboard.html', as: 'organic.html' }, { src: 'keywords.html', as: 'keywords.html' }];
   for (const item of publish) {
     const file = item.src, out = item.as || item.src;
+    // OPEN mode (user asked 17 Nov 2026 for a link with no password): ship the plain page.
+    // The tick-column token must never ride along in plaintext, so refuse if one leaked in.
+    if (seal.open || item.open) {
+      const html = fs.readFileSync(OUT + '/' + file, 'utf8');
+      if (/github_pat_|ghp_[A-Za-z0-9]{20}/.test(html)) {
+        console.error(`\nFAILED: ${file} contains a GitHub token and seal.open is on. Build without RANKBOARD_GH_TOKEN.`);
+        process.exit(4);
+      }
+      const dest = seal.siteDir ? abs(seal.siteDir) + '/' + out : OUT + '/open_' + out;
+      fs.writeFileSync(dest, html.replace('<head>', '<head><meta name="robots" content="noindex,nofollow">'));
+      creds[out] = '(open — no password)';
+      console.log('  OPEN  ' + out);
+      continue;
+    }
     // A refresh must not mint a new password \u2014 the client already has the old one.
     // passEnv is the CI path (password lives in a secret, never in the repo). A
     // declared passEnv that is empty is a HARD STOP: falling through to a random

@@ -54,7 +54,8 @@
         "passEnv": "RANKBOARD_PELETRADE_PASS",
         "title": "PELETRADE — monthly organic progress"
       }
-    ]
+    ],
+    "open": true
   },
   "products": [
     {
@@ -261,6 +262,6 @@
     }
   ],
   "monthly": {
-    "since": "2025-12"
+    "since": "2026-01"
   }
 }
