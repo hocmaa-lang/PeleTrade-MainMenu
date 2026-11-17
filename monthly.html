@@ -82,6 +82,7 @@ svg text{fill:var(--ink3);font-size:11px}
 
 <h2>Every ASIN, every month</h2>
 <div class="bar"><span class="lbl">Count</span>
+  <button data-m="all">All keywords</button>
   <button data-m="t10" class="on">Keywords in top 10</button>
   <button data-m="t50">Keywords in top 50</button>
   <button data-m="t100">Ranking at all (top 100)</button>
@@ -132,7 +133,7 @@ function lastTwo(st){const idx=st.map((s,i)=>s?i:-1).filter(i=>i>=0);return [idx
 
 let metric='t10';
 function grid(){
-  const val=(s)=>s?(metric==='sv50'?s.sv50:s[metric]):null;
+  const val=(s)=>s?(metric==='sv50'?s.sv50:metric==='all'?s.withData:s[metric]):null;
   const maxAll=Math.max(1,...D.products.flatMap(p=>p.stats.map(s=>val(s)||0)));
   let h='<thead><tr><th>ASIN</th>'+MON.map(m=>'<th class="m">'+m.label+(m.mtd?'<span class="mtd">to date</span>':'')+'</th>').join('')+
     '<th class="m">vs prev month</th><th class="m">vs first month</th></tr></thead><tbody>';
@@ -146,7 +147,7 @@ function grid(){
       // A month resting on only a few crawl days is flagged in the cell itself, not
       // just in the tooltip — one day of data must not read like a whole month.
       const sub=s.crawl<7?'only '+s.crawl+(s.crawl===1?' day':' days'):
-        metric==='sv50'?(p.totalSv?Math.round(100*v/p.totalSv)+'% of SV':''):s.withData+' w/ data';
+        metric==='sv50'?(p.totalSv?Math.round(100*v/p.totalSv)+'% of SV':''):metric==='all'?('T10 '+s.t10+' · T50 '+s.t50+' · T100 '+s.t100):s.withData+' w/ data';
       h+='<td class="m"><span class="cell" style="background:rgba(var(--heat),'+(0.06+0.5*a).toFixed(2)+');color:'+(a>0.55?'#fff':'var(--ink)')+'" title="'+s.crawl+' crawl days"><b>'+txt+'</b><small>'+sub+'</small></span></td>';});
     const d=(i,j)=>(i==null||j==null)?null:(val(p.stats[i])-val(p.stats[j]));
     const show=x=>x==null?'<span class="fl">—</span>':metric==='sv50'?(x===0?'<span class="d fl">0</span>':'<span class="d '+(x>0?'up':'dn')+'">'+(x>0?'▲ ':'▼ ')+fmt(Math.abs(x))+'</span>'):dl(x);
@@ -155,7 +156,8 @@ function grid(){
   document.getElementById('grid').innerHTML=h+'</tbody>';
 }
 document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('[data-m]').forEach(x=>x.classList.remove('on'));b.classList.add('on');metric=b.dataset.m;grid();}));
+  document.querySelectorAll('[data-m]').forEach(x=>x.classList.remove('on'));b.classList.add('on');metric=b.dataset.m;grid();
+  if(metric==='all'&&onlyR){onlyR=false;const o=document.getElementById('onlyr');if(o)o.classList.remove('on');detail();}}));
 
 let cur=D.products.findIndex(p=>p.stats.some(Boolean));if(cur<0)cur=0;
 let ksort='sv',onlyR=true;
