@@ -27,7 +27,9 @@ const CFG = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
 const CFGDIR = path.dirname(path.resolve(cfgPath));
 const SPILL = path.resolve(CFGDIR, CFG.spillDir.replace(/\\/g, '/'))
   .replace(/\\/g, '/').replace(/\/?$/, '/');
-const WINDOW = DAYS || CFG.days || 30;
+// CFG.since (YYYY-MM-DD) = a window that grows every day, e.g. year-to-date.
+const SINCE_DAYS = CFG.since ? Math.floor((Date.now() - Date.parse(CFG.since + "T00:00:00Z")) / 86400000) + 1 : null;
+const WINDOW = DAYS || SINCE_DAYS || CFG.days || 30;
 const BASE = process.env.DATADIVE_BASE_URL || 'https://api.datadive.tools';
 
 // Key from the environment first — that is the only path that exists in CI. The
@@ -55,7 +57,33 @@ const iso = d => d.toISOString().slice(0, 10);
 // lastPage, total, data: [...] } }, 20 keywords a page by default, 100 max. Reading
 // it as the old bare array saw 0 keywords and froze the board for three weeks.
 // Walk every page with `currentPage` (not `page` — that one is silently ignored).
+// The API serves at most ~90 days per call. Longer windows (e.g. year-to-date) are
+// pulled in 90-day chunks and merged per keyword id, dates de-duplicated.
 async function getRadar(id, key, startDate, endDate) {
+  const s = new Date(startDate + 'T00:00:00Z'), e = new Date(endDate + 'T00:00:00Z');
+  if ((e - s) / 86400000 < 90) return getRadarChunk(id, key, startDate, endDate);
+  const byId = new Map();
+  for (let a = s; a <= e; a = new Date(a.getTime() + 90 * 86400000)) {
+    const b = new Date(Math.min(e.getTime(), a.getTime() + 89 * 86400000));
+    const part = await getRadarChunk(id, key, iso(a), iso(b));
+    for (const k of part) {
+      const cur = byId.get(k.id);
+      if (!cur) { byId.set(k.id, { ...k, ranks: [...k.ranks] }); continue; }
+      const seen = new Set(cur.ranks.map(r => r.date));
+      for (const r of k.ranks) if (!seen.has(r.date)) cur.ranks.push(r);
+      cur.searchVolume = k.searchVolume; cur.relevancy = k.relevancy; cur.highlights = k.highlights;
+    }
+  }
+  // keywords added to the radar later have no early dates: pad them so every row spans the window
+  const all = [...new Set([...byId.values()].flatMap(k => k.ranks.map(r => r.date)))].sort();
+  for (const k of byId.values()) {
+    const have = new Set(k.ranks.map(r => r.date));
+    for (const d of all) if (!have.has(d)) k.ranks.push({ date: d, organicRank: null, sponsoredRank: null, impressionRank: null });
+  }
+  return [...byId.values()];
+}
+
+async function getRadarChunk(id, key, startDate, endDate) {
   const out = [];
   for (let page = 1; page <= 200; page++) {
     const body = await getPage(id, key, startDate, endDate, page);
